@@ -55,7 +55,7 @@ root@server:~/iperf3_odroid# cd service
 root@server:~/iperf3_odroid/service# ./install
 ```
 
-### server auto login
+### Auto login
 ```
 root@server:~# systemctl edit getty@tty1.service
 ```
@@ -68,7 +68,25 @@ Type=idle
 * edit tool save
   save exit [Ctrl+ k, Ctrl + q]
 
-### disable screen off
+### Disable Console (serial ttyS0), hdmi 1920xs1080, gpio overlay disable
+```
+root@server:~# vi /medoa/boot/boot.ini
+...
+# setenv condev "console=ttyS0,115200n8"   # on both
+...
+
+root@server:~# vi /medoa/boot/boot.ini
+...
+...
+; display_autodetect=true
+display_autodetect=false
+...
+; overlays="spi0 i2c0 i2c1 uart0"
+overlays=""
+...
+...
+```
+### Disable screen off
 ```
 root@server:~# vi ~/.bashrc
 ...
