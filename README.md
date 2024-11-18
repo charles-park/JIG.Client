@@ -18,7 +18,7 @@ root@odroid:~# apt update && apt upgrade -y
 // ubuntu package install
 root@odroid:~# apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap
 // python3 package
-root@server:~# pip install aiohttp asyncio
+root@odroid:~# pip install aiohttp asyncio
 
 // system reboot
 root@odroid:~# reboot
@@ -36,31 +36,31 @@ root@odroid:~# git config --global user.name "charles-park"
 
 ### Clone the reopsitory with submodule
 ```
-root@server:~# git clone --recursive https://github.com/charles-park/JIG.Client
+root@odroid:~# git clone --recursive https://github.com/charles-park/JIG.Client
 
 or
 
-root@server:~# git clone https://github.com/charles-park/JIG.Client
-root@server:~# cd JIG.Client
-root@server:~/JIG.Client# git submodule update --init --recursive
+root@odroid:~# git clone https://github.com/charles-park/JIG.Client
+root@odroid:~# cd JIG.Client
+root@odroid:~/JIG.Client# git submodule update --init --recursive
 ```
 
 ### iperf3_odroid server mode install
 ```
-root@server:~# git clone https://github.com/charles-park/iperf3_odroid
+root@odroid:~# git clone https://github.com/charles-park/iperf3_odroid
 
-root@server:~# cd iperf3_odroid
-root@server:~/iperf3_odroid# apt install iperf3
-root@server:~/iperf3_odroid# make
-root@server:~/iperf3_odroid# make install
+root@odroid:~# cd iperf3_odroid
+root@odroid:~/iperf3_odroid# apt install iperf3
+root@odroid:~/iperf3_odroid# make
+root@odroid:~/iperf3_odroid# make install
 
-root@server:~/iperf3_odroid# cd service
-root@server:~/iperf3_odroid/service# ./install
+root@odroid:~/iperf3_odroid# cd service
+root@odroid:~/iperf3_odroid/service# ./install
 ```
 
 ### Auto login
 ```
-root@server:~# systemctl edit getty@tty1.service
+root@odroid:~# systemctl edit getty@tty1.service
 ```
 ```
 [Service]
@@ -73,12 +73,12 @@ Type=idle
 
 ### Disable Console (serial ttyS0), hdmi 1920xs1080, gpio overlay disable
 ```
-root@server:~# vi /medoa/boot/boot.ini
+root@odroid:~# vi /medoa/boot/boot.ini
 ...
 # setenv condev "console=ttyS0,115200n8"   # on both
 ...
 
-root@server:~# vi /medoa/boot/boot.ini
+root@odroid:~# vi /medoa/boot/boot.ini
 ...
 ...
 ; display_autodetect=true
@@ -91,7 +91,7 @@ overlays=""
 ```
 ### Disable screen off
 ```
-root@server:~# vi ~/.bashrc
+root@odroid:~# vi ~/.bashrc
 ...
 setterm -blank 0 -powerdown 0 -powersave off 2>/dev/null
 echo 0 > /sys/class/graphics/fb0/blank
@@ -100,7 +100,7 @@ echo 0 > /sys/class/graphics/fb0/blank
 
 ### server static ip settings
 ```
-root@server:~# vi /etc/netplan/01-netcfg.yaml
+root@odroid:~# vi /etc/netplan/01-netcfg.yaml
 ```
 ```
 network:
@@ -118,14 +118,14 @@ network:
 
 ```
 ```
-root@server:~# netplan apply
-root@server:~# ifconfig
+root@odroid:~# netplan apply
+root@odroid:~# ifconfig
 ```
 
 ### server samba config
 ```
-root@server:~# smbpasswd -a root
-root@server:~# vi /etc/samba/smb.conf
+root@odroid:~# smbpasswd -a root
+root@odroid:~# vi /etc/samba/smb.conf
 ```
 ```
 [odroid]
@@ -138,22 +138,16 @@ root@server:~# vi /etc/samba/smb.conf
    directory mask = 0755
 ```
 ```
-root@server:~# service smbd restart
+root@odroid:~# service smbd restart
 ```
 
 ### Overlay root
 * overlayroot enable
 ```
-root@server:~# update-initramfs -c -k $(uname -r)
-Using DTB: rockchip/rk3566-odroid-m1s.dtb
-Installing rockchip into /boot/dtbs/5.10.0-odroid-arm64/rockchip/
-Installing rockchip into /boot/dtbs/5.10.0-odroid-arm64/rockchip/
-flash-kernel: installing version 5.10.0-odroid-arm64
-Generating boot script u-boot image... done.
-Taking backup of boot.scr.
-Installing new boot.scr.
+root@odroid:~# update-initramfs -c -k $(uname -r)
+update-initramfs: Generating /boot/initrd.img-4.9.337-17
 
-root@server:~# mkimage -A arm64 -O linux -T ramdisk -C none -a 0 -e 0 -n uInitrd -d /boot/initrd.img-$(uname -r) /boot/uInitrd 
+root@odroid:~# mkimage -A arm64 -O linux -T ramdisk -C none -a 0 -e 0 -n uInitrd -d /boot/initrd.img-$(uname -r) /media/boot/uInitrd 
 Image Name:   uInitrd
 Created:      Fri Oct 27 04:27:58 2023
 Image Type:   AArch64 Linux RAMDisk Image (uncompressed)
@@ -170,12 +164,12 @@ overlayroot="tmpfs"
 * overlayroot disable
 ```
 // get write permission
-root@server:~# overlayroot-chroot 
+root@odroid:~# overlayroot-chroot 
 INFO: Chrooting into [/media/root-ro]
-root@server:~# 
+root@odroid:~# 
 
 // Change overlayroot value "tmpfs" to "" for overlayroot disable
-root@server:~# vi /etc/overlayroot.conf
+root@odroid:~# vi /etc/overlayroot.conf
 ...
 overlayroot_cfgdisk="disabled"
 overlayroot=""
