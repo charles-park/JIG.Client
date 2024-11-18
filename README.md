@@ -10,15 +10,18 @@ root@odroid:~# uname -a
 Linux odroid 4.9.312-6 #1 SMP PREEMPT Wed Jun 29 17:01:17 UTC 2022 aarch64 aarch64 aarch64 GNU/Linux
 
 root@odroid:~# vi /etc/apt/sources.list
-disable "jammy-updates" line
-...
-root@odroid:~# apt update && apt upgrade -y
-...
-root@odroid:~# apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap
+* disable "jammy-updates" line
 ...
 
+// system update
+root@odroid:~# apt update && apt upgrade -y
+// ubuntu package install
+root@odroid:~# apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap
+// python3 package
+root@server:~# pip install aiohttp asyncio
+
+// system reboot
 root@odroid:~# reboot
-...
 
 root@odroid:~# uname -a
 Linux odroid 4.9.337-17 #1 SMP PREEMPT Mon Sep 2 05:42:54 UTC 2024 aarch64 aarch64 aarch64 GNU/Linux
@@ -136,42 +139,6 @@ root@server:~# vi /etc/samba/smb.conf
 ```
 ```
 root@server:~# service smbd restart
-```
-
-### Sound setup
-```
-root@server:~# aplay -l
-**** List of PLAYBACK Hardware Devices ****
-card 0: rockchiphdmi0 [rockchip-hdmi0], device 0: fe400000.i2s-i2s-hifi i2s-hifi-0 [fe400000.i2s-i2s-hifi i2s-hifi-0]
-  Subdevices: 1/1
-  Subdevice #0: subdevice #0
-card 1: rockchiprk809 [rockchip-rk809], device 0: fe410000.i2s-rk817-hifi rk817-hifi-0 [fe410000.i2s-rk817-hifi rk817-hifi-0]
-  Subdevices: 1/1
-  Subdevice #0: subdevice #0
-
-root@server:~# amixer -c 1
-Simple mixer control 'Playback Path',0
-  Capabilities: enum
-  Items: 'OFF' 'RCV' 'SPK' 'HP' 'HP_NO_MIC' 'BT' 'SPK_HP' 'RING_SPK' 'RING_HP' 'RING_HP_NO_MIC' 'RING_SPK_HP'
-  Item0: 'OFF'
-Simple mixer control 'Capture MIC Path',0
-  Capabilities: enum
-  Items: 'MIC OFF' 'Main Mic' 'Hands Free Mic' 'BT Sco Mic'
-  Item0: 'MIC OFF'
-
-root@server:~# amixer -c 1 sset 'Playback Path' 'HP'
-root@server:~# amixer -c 1
-Simple mixer control 'Playback Path',0
-  Capabilities: enum
-  Items: 'OFF' 'RCV' 'SPK' 'HP' 'HP_NO_MIC' 'BT' 'SPK_HP' 'RING_SPK' 'RING_HP' 'RING_HP_NO_MIC' 'RING_SPK_HP'
-  Item0: 'HP'
-Simple mixer control 'Capture MIC Path',0
-  Capabilities: enum
-  Items: 'MIC OFF' 'Main Mic' 'Hands Free Mic' 'BT Sco Mic'
-  Item0: 'MIC OFF'
-
-// play audio file
-root@server:~# aplay -Dhw:1,0 {audio file} -d {play time}
 ```
 
 ### Overlay root
