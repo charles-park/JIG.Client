@@ -3,6 +3,7 @@
 
 ### ODROID-C4 (2024-11-18)
 * Linux OS Image https://dn.odroid.com/S905X3/ODROID-C4/Ubuntu/22.04/ubuntu-22.04-4.9-minimal-odroid-c4-hc4-20220705.img.xz
+* LIRC Install for IR : https://wiki.odroid.com/odroid-c4/application_note/lirc/lirc_ubuntu18.04#tab__odroid-c2n2c4hc4
 
 ### Install package
 ```
@@ -16,7 +17,7 @@ root@odroid:~# vi /etc/apt/sources.list
 // system update
 root@odroid:~# apt update && apt upgrade -y
 // ubuntu package install
-root@odroid:~# apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap
+root@odroid:~# apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap evtest
 // python3 package
 root@odroid:~# pip install aiohttp asyncio
 
