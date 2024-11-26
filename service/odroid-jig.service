@@ -1,0 +1,36 @@
+#
+# Service의 등록(부팅시 자동으로 실행되어짐)
+#
+#  서비스등록 방법(root권한 필요):
+#    등록할 파일 *.service 을 /etc/systemd/system/ 으로 복사함.
+#    서비스의 등록 : sudo systemctl enable {service name}
+#    서비스의 해제 : sudo systemctl disable {service name}
+#
+Description=ODROID-JIG Service
+# After=syslog.target
+After=sysinit.target
+
+[Service]
+Type=simple
+
+# login의 user를 입력한다. root계정의 경우 root로 입력한다.
+User=root
+
+# github에서 내려 받은 폴더를 기록하도록 한다. (실행 파일폴더)
+# client folder
+WorkingDirectory=/root/JIG.Client
+
+ExecStartPre=/bin/sleep 5
+ExecStart=/root/JIG.Client/service/jig-service.sh
+
+# on-success의 경우 (Kill -2) 옵션으로 종료시 재시작 합니다.
+# on-failure의 경우 (kill -9) 옵션으로 종료시 재시작 합니다.
+# always 항상 재시작 합니다.
+Restart=on-success
+
+# 설정한 시간 뒤에 실행합니다.
+RestartSec=1s
+
+[Install]
+WantedBy=multi-user.target
+#WantedBy=default.target
