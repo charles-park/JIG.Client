@@ -31,6 +31,11 @@
 #include <linux/fb.h>
 #include <getopt.h>
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <net/if.h>
+
 //------------------------------------------------------------------------------
 #include "lib_fbui/lib_fb.h"
 #include "lib_fbui/lib_ui.h"
@@ -63,6 +68,11 @@ typedef struct client__t {
     char        rx_msg [SERIAL_RESP_SIZE +1];
     char        tx_msg [SERIAL_RESP_SIZE +1];
 }   client_t;
+
+//------------------------------------------------------------------------------
+#define DEFAULT_CHECK_TIME  30
+
+volatile int SystemCheckReady = 0, RunningTime = DEFAULT_CHECK_TIME;
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -115,6 +125,10 @@ static int run_interval_check (struct timeval *t, double interval_ms)
 //------------------------------------------------------------------------------
 pthread_t thread_ui;
 
+enum { eSTATUS_WAIT, eSTATUS_RUN, eSTATUS_PRINT, eSTATUS_STOP, eSTATUS_END };
+
+volatile int UIStatus = eSTATUS_WAIT;
+
 static void *thread_ui_func (void *pclient)
 {
     static int onoff = 0;
@@ -125,8 +139,39 @@ static void *thread_ui_func (void *pclient)
                     onoff ? COLOR_GREEN : p->pui->bc.uint, -1);
         onoff = !onoff;
 
-        if (onoff)  ui_update (p->pfb, p->pui, -1);
+        if (onoff)  {
+            switch (UIStatus) {
+                case eSTATUS_WAIT:
+                    if (SystemCheckReady)    UIStatus = eSTATUS_RUN;
+                    ui_set_sitem (p->pfb, p->pui, 47, -1, -1, "WAIT");
+                    ui_set_ritem (p->pfb, p->pui, 47, p->pui->bc.uint, -1);
+                    break;
+                case eSTATUS_RUN:
+                    if (RunningTime) {
+                        char run_str[16];
 
+                        memset  (run_str, 0, sizeof(run_str));
+                        sprintf (run_str, "Running(%d)", RunningTime--);
+                        ui_set_sitem (p->pfb, p->pui, 47, -1, -1, run_str);
+                    } else UIStatus = eSTATUS_PRINT;
+
+                    break;
+                case eSTATUS_PRINT:
+                    // print_macaddr();
+                    // print_error();
+                    UIStatus = eSTATUS_STOP;
+                    ui_set_sitem (p->pfb, p->pui, 47, -1, -1, "STOP");
+                    ui_set_ritem (p->pfb, p->pui, 47,
+                        SystemCheckReady ? COLOR_RED : COLOR_GREEN, -1);
+                    break;
+                case eSTATUS_STOP:
+                    break;
+                default :
+                    UIStatus = eSTATUS_WAIT;
+                    break;
+            }
+            ui_update (p->pfb, p->pui, -1);
+        }
         usleep (APP_LOOP_DELAY * 1000);
     }
     return pclient;
@@ -242,6 +287,7 @@ static int update_client_data (client_t *p, struct parse_item *pdata)
                 (pdata->status_i == 1) ? COLOR_GREEN : COLOR_RED, -1);
     } else {
         int status = client_self_check(pdata);
+
         if (status) {
             ui_set_ritem (p->pfb, p->pui, uid,
                     pdata->status_i ? COLOR_GREEN : COLOR_RED, -1);
@@ -311,9 +357,6 @@ void client_data_check (client_t *p, int check_item, void *dev_resp)
 }
 
 //------------------------------------------------------------------------------
-#define DEFAULT_CHECK_TIME  30
-
-volatile int SystemReady = 0, RunningTime = DEFAULT_CHECK_TIME;
 pthread_t thread_check;
 
 static void *thread_check_func (void *pclient)
@@ -323,7 +366,7 @@ static void *thread_check_func (void *pclient)
     char dev_resp[DEVICE_RESP_SIZE];
     client_t *p = (client_t *)pclient;
 
-    while (!SystemReady)    usleep (APP_LOOP_DELAY * 1000);
+    while (!SystemCheckReady)    usleep (APP_LOOP_DELAY * 1000);
 
     while (pass_item != p->pui->i_item_cnt) {
         for (check_item = 0, pass_item = 0; check_item < p->pui->i_item_cnt; check_item++) {
@@ -335,7 +378,8 @@ static void *thread_check_func (void *pclient)
 
             if (!p->pui->i_item[check_item].complete) {
                 int status;
-                ui_set_ritem (p->pfb, p->pui, uid, COLOR_YELLOW, -1);
+                if (!p->pui->i_item[check_item].is_info)
+                    ui_set_ritem (p->pfb, p->pui, uid, COLOR_YELLOW, -1);
 
                 status = device_check (p->pui->i_item[check_item].grp_id,
                                     p->pui->i_item[check_item].dev_id, dev_resp);
@@ -354,6 +398,9 @@ static void *thread_check_func (void *pclient)
         // loop delay
         usleep (APP_LOOP_DELAY * 1000);
     }
+
+    // check complete
+    RunningTime = 0;    SystemCheckReady = 0;
     printf ("%s : exit!\r\n", __func__);
     return pclient;
 }
@@ -386,7 +433,7 @@ static void protocol_parse (client_t *p)
 
     switch (pitem.cmd) {
         case 'O':
-            SystemReady = 1;
+            SystemCheckReady = 1;
             break;
         case 'B':
             printf ("%s : server reboot!! client reboot!\n", __func__);
@@ -403,9 +450,41 @@ static void protocol_parse (client_t *p)
             }
             break;
         default :
-            printf ("%s : unknown command!! (%c)\n", pitem.cmd);
+            printf ("%s : unknown command!! (%c)\n", __func__, pitem.cmd);
             break;
     }
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+#define UI_ID_IPADDR    4
+
+static void board_ip_file (client_t *p)
+{
+    int fd;
+    struct ifreq ifr;
+    char ip_addr[sizeof(struct sockaddr)+1];
+
+    /* this entire function is almost copied from ethtool source code */
+    /* Open control socket. */
+    ui_set_sitem (p->pfb, p->pui, UI_ID_IPADDR, -1, -1, "???.???.???.???");
+
+    if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+    {
+        fprintf (stdout, "Cannot get control socket\n");
+        return 0;
+    }
+    strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+    if (ioctl(fd, SIOCGIFADDR, &ifr) < 0) {
+        fprintf (stdout, "SIOCGIFADDR ioctl Error!!\n");
+        close(fd);
+        return 0;
+    }
+    memset (ip_addr, 0x00, sizeof(ip_addr));
+    inet_ntop(AF_INET, ifr.ifr_addr.sa_data+2, ip_addr, sizeof(struct sockaddr));
+
+    printf ("%s : ip_address = %s\n", __func__, ip_addr);
+    ui_set_sitem (p->pfb, p->pui, UI_ID_IPADDR, -1, -1, ip_addr);
 }
 
 //------------------------------------------------------------------------------
@@ -429,8 +508,10 @@ int main (void)
         protocol_msg_tx (client.puart, "\r\n");
     }
 
+    board_ip_file (&client);
+
 #if defined (__JIG_SELF_MODE__)
-    SystemReady = 1;
+    SystemCheckReady = 1;
 #endif
 
     while (1) {
