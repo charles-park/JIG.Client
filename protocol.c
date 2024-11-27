@@ -40,10 +40,10 @@ int protocol_check (ptc_var_t *var)
 //------------------------------------------------------------------------------
 int protocol_catch (ptc_var_t *var)
 {
-    char cmd = var->buf[(var->p_sp + 1) % var->size];
+    char cmd = var->buf[(var->p_sp + 2) % var->size];
 
     switch (cmd) {
-        case 'C':   case 'P':
+        case 'B': case 'A': case 'R': case 'O':
             return 1;
         default :
             printf ("unknown command %c\n", cmd);
@@ -52,7 +52,6 @@ int protocol_catch (ptc_var_t *var)
 }
 
 //------------------------------------------------------------------------------
-//void protocol_msg_tx (uart_t *puart, char *tx_msg)
 void protocol_msg_tx (uart_t *puart, void *tx_msg)
 {
     if (puart == NULL)  return;
@@ -79,7 +78,6 @@ int protocol_msg_rx (uart_t *puart, char *rx_msg)
                 puart->p[p_cnt].var.pass = 0;
                 puart->p[p_cnt].var.open = 1;
 
-                /* start(1), cmd(1), ui_ui(4), grp_id(2), dev_id(3), action(1), extra(6), end(1) = 19 bytes */
                 for (i = 0; i < (int)var->size; i++)
                     // uuid start position is 2
                     rx_msg [i] = var->buf[(var->p_sp + i) % var->size];

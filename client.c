@@ -134,15 +134,6 @@ static void *thread_ui_func (void *pclient)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-#if 0
-static int remove_space_str (char *str_value);
-   /* 문자열이 없거나 앞부분의 공백이 있는 경우 제거 */
-   if ((ptr = strtok (NULL, ",")) != NULL) {
-      int slen = strlen(ptr);
-
-      while ((*ptr == 0x20) && slen--)
-         ptr++;
-#endif
 struct parse_item {
     char    cmd;
     int     gid;
@@ -157,16 +148,18 @@ static int parse_data (char *msg, struct parse_item *parse_data);
 static int parse_data (char *msg, struct parse_item *parse_data)
 {
     int msg_size = (int)strlen(msg);
-    char *ptr;
+    char *ptr, resp[DEVICE_RESP_SIZE+1];
 
     if ((msg_size != SERIAL_RESP_SIZE) && (msg_size != DEVICE_RESP_SIZE)) {
         printf ("%s : unknown msg size = %d, msg = %s\n", __func__, msg_size, msg);
         return 0;
     }
 
+    memset (resp, 0, sizeof(resp));
+    memcpy (resp, msg, DEVICE_RESP_SIZE);
     memset (parse_data, 0, sizeof(struct parse_item));
 
-    if ((ptr = strtok (msg, ",")) != NULL) {
+    if ((ptr = strtok (resp, ",")) != NULL) {
         if (msg_size == SERIAL_RESP_SIZE) {
             // cmd
             if ((ptr = strtok (NULL, ",")) != NULL)
@@ -213,15 +206,49 @@ static int find_uid (client_t *p, int gid, int did)
 }
 
 //------------------------------------------------------------------------------
+static int find_i_item (client_t *p, int gid, int did)
+{
+    int i;
+    for (i = 0; i < p->pui->i_item_cnt; i++) {
+        if ((p->pui->i_item[i].grp_id == gid) && (p->pui->i_item[i].dev_id == did))
+            return i;
+    }
+    printf ("%s : Cannot find i_item. gid = %d, did = %d\n", __func__, gid, did);
+    return -1;
+}
+
+//------------------------------------------------------------------------------
+int client_self_check (struct parse_item *pdata)
+{
+    /* IR Thread running */
+    if (pdata->gid == eGID_IR)  return 0;
+
+    // not implement
+
+    // self check ok
+    return 1;
+}
+
+//------------------------------------------------------------------------------
 static int update_client_data (client_t *p, struct parse_item *pdata)
 {
-    char pstr[DEVICE_RESP_SIZE +1];
+    char pstr[DEVICE_RESP_SIZE];
     int uid = find_uid (p, pdata->gid, pdata->did);
 
     if (uid == -1)  return 0;
 
-    ui_set_ritem (p->pfb, p->pui, uid,
-            (pdata->status_i == 1) ? COLOR_GREEN : COLOR_RED, -1);
+    if (pdata->status_c != 'C') {
+        ui_set_ritem (p->pfb, p->pui, uid,
+                (pdata->status_i == 1) ? COLOR_GREEN : COLOR_RED, -1);
+    } else {
+        int status = client_self_check(pdata);
+        if (status) {
+            ui_set_ritem (p->pfb, p->pui, uid,
+                    pdata->status_i ? COLOR_GREEN : COLOR_RED, -1);
+
+            p->pui->i_item[find_i_item(p, pdata->gid, pdata->did)].complete = 1;
+        }
+    }
 
     memset (pstr, 0, sizeof(pstr));
     memcpy (pstr, pdata->resp_s, strlen(pdata->resp_s));
@@ -231,6 +258,10 @@ static int update_client_data (client_t *p, struct parse_item *pdata)
             if (pdata->did == eSYSTEM_MEM) {
                 memset  (pstr, 0, sizeof(pstr));
                 sprintf (pstr, "%d GB", pdata->resp_i);
+            }
+            if (pdata->did == eSYSTEM_FB_SIZE) {
+                memset  (pstr, 0, sizeof(pstr));
+                sprintf (pstr, "%s", (pdata->status_i == 1) ? "PASS" : "FAIL");
             }
             break;
         case eGID_ETHERNET:
@@ -250,28 +281,52 @@ static int update_client_data (client_t *p, struct parse_item *pdata)
 }
 
 //------------------------------------------------------------------------------
-char *remove_space (char *pstr) {
-    int slen = strlen(pstr);
-   /* 문자열이 없거나 앞부분의 공백이 있는 경우 제거 */
-    while ((*pstr == 0x20) && slen--)
-        pstr++;
+//#define __JIG_SELF_MODE__
 
-    return pstr;
+void client_data_check (client_t *p, int check_item, void *dev_resp)
+{
+    int gid = p->pui->i_item[check_item].grp_id;
+    int did = p->pui->i_item[check_item].dev_id;
+
+#if defined(__JIG_SELF_MODE__)
+    // if self(server) mode
+    {
+        struct parse_item pdata;
+        if (parse_data( dev_resp, &pdata)) {
+            pdata.cmd = 'S';
+            pdata.gid = gid;
+            pdata.did = did;
+            update_client_data (p, &pdata);
+        }
+    }
+#endif
+    // if client mode
+    {
+        char serial_resp[SERIAL_RESP_SIZE];
+        SERIAL_RESP_FORM(serial_resp, 'S', gid, did, dev_resp);
+        protocol_msg_tx (p->puart, serial_resp);
+        protocol_msg_tx (p->puart, "\r\n");
+    }
+    usleep (100 * 1000);
 }
 
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+#define DEFAULT_CHECK_TIME  30
+
+volatile int SystemReady = 0, RunningTime = DEFAULT_CHECK_TIME;
 pthread_t thread_check;
 
 static void *thread_check_func (void *pclient)
 {
-    static int RunningTime = 60, check_item = 0;
+    int check_item = 0, pass_item = 0;;
     int gid, did, uid;
     char dev_resp[DEVICE_RESP_SIZE];
     client_t *p = (client_t *)pclient;
 
-    while (1) {
-        for (check_item = 0; check_item < p->pui->i_item_cnt; check_item++) {
+    while (!SystemReady)    usleep (APP_LOOP_DELAY * 1000);
+
+    while (pass_item != p->pui->i_item_cnt) {
+        for (check_item = 0, pass_item = 0; check_item < p->pui->i_item_cnt; check_item++) {
             uid = p->pui->i_item[check_item].ui_id;
             gid = p->pui->i_item[check_item].grp_id;
             did = p->pui->i_item[check_item].dev_id;
@@ -279,34 +334,27 @@ static void *thread_check_func (void *pclient)
             memset (dev_resp, 0, sizeof(dev_resp));
 
             if (!p->pui->i_item[check_item].complete) {
+                int status;
                 ui_set_ritem (p->pfb, p->pui, uid, COLOR_YELLOW, -1);
 
-                p->pui->i_item[check_item].complete =
-                        device_check (p->pui->i_item[check_item].grp_id,
+                status = device_check (p->pui->i_item[check_item].grp_id,
                                     p->pui->i_item[check_item].dev_id, dev_resp);
-            }
 
-            printf ("\n%s : gid = %d, did = %d, complete = %d, resp = %s\n",
-                    __func__, p->pui->i_item[check_item].grp_id,
-                            p->pui->i_item[check_item].dev_id,
-                            p->pui->i_item[check_item].complete, dev_resp);
-            // if self(server) mode
-            if (p->pui->i_item[check_item].complete) {
-                struct parse_item pdata;
-                if (parse_data( dev_resp, &pdata)) {
-                    pdata.cmd = 'S';
-                    pdata.gid = gid;
-                    pdata.did = did;
-                    update_client_data (p, &pdata);
-                }
-            }
-            // if client mode
-            // send tx
-            // wait response
-//            usleep (APP_LOOP_DELAY * 1000);
-            usleep (100 * 1000);
+                printf ("\n%s : gid = %d, did = %d, complete = %d, resp = %s\n",
+                        __func__, p->pui->i_item[check_item].grp_id,
+                                p->pui->i_item[check_item].dev_id,
+                                p->pui->i_item[check_item].complete, dev_resp);
+
+#if defined (__JIG_SELF_MODE__)
+                p->pui->i_item[check_item].complete = (dev_resp[0] == 'C') ? 0 : status;
+#endif
+                client_data_check (p, check_item, dev_resp);
+            } else pass_item++;
         }
+        // loop delay
+        usleep (APP_LOOP_DELAY * 1000);
     }
+    printf ("%s : exit!\r\n", __func__);
     return pclient;
 }
 
@@ -331,28 +379,33 @@ static int client_setup (client_t *p)
 //------------------------------------------------------------------------------
 static void protocol_parse (client_t *p)
 {
-#if 0
-    int status = 0, int_ui_id = 0;
-    char resp[SIZE_RESP_BYTES +1], str_ui_id[SIZE_UI_ID +1];
+    struct parse_item pitem;
+    char *rx_msg = (char *)p->rx_msg;
 
-    // Server reboot cmd
-    if (p->rx_msg[1] == 'P') {
-        // Ready msg send
-        protocol_msg_tx (p->puart, 'R', 0, "000000");
-        return;
+    if (!parse_data (rx_msg, &pitem))   return;
+
+    switch (pitem.cmd) {
+        case 'O':
+            SystemReady = 1;
+            break;
+        case 'B':
+            printf ("%s : server reboot!! client reboot!\n", __func__);
+            fflush (stdout);
+            exit (0);   // normal exit than app restart.
+        case 'A':
+            if (update_client_data (p, &pitem)) {
+                int check_item;
+                if ((check_item = find_i_item (p, pitem.gid, pitem.did)) != -1) {
+                    p->pui->i_item[check_item].complete = 1;
+                    printf ("%s : gid = %d, did = %d, ack received.\n",
+                            __func__, pitem.gid, pitem.did);
+                }
+            }
+            break;
+        default :
+            printf ("%s : unknown command!! (%c)\n", pitem.cmd);
+            break;
     }
-    memset (str_ui_id, 0, SIZE_UI_ID);
-    memcpy (str_ui_id, &p->rx_msg[2], SIZE_UI_ID);
-
-    int_ui_id = atoi (str_ui_id);
-
-    memset (resp, 0, SIZE_RESP_BYTES);
-    status = device_check (p->rx_msg, resp);
-    if (status < 0)
-        protocol_msg_tx (p->puart, 'B', int_ui_id, resp);
-    else
-        protocol_msg_tx (p->puart, status ? 'O' : 'E', int_ui_id, resp);
-#endif
 }
 
 //------------------------------------------------------------------------------
@@ -369,14 +422,20 @@ int main (void)
     pthread_create (&thread_ui,    NULL, thread_ui_func,    (void *)&client);
     pthread_create (&thread_check, NULL, thread_check_func, (void *)&client);
     // Send boot msg & Wait for Ready msg
-//    protocol_msg_tx (client.puart, 'R', 0, "000000");
-//  protocol_wait (client.puart, 'P');...
-// protocol_msg_tx (client.puart, "123454566\r\n");
+    {
+        char serial_resp[SERIAL_RESP_SIZE];
+        SERIAL_RESP_FORM(serial_resp, 'R', -1, -1, NULL);
+        protocol_msg_tx (client.puart, serial_resp);
+        protocol_msg_tx (client.puart, "\r\n");
+    }
+
+#if defined (__JIG_SELF_MODE__)
+    SystemReady = 1;
+#endif
 
     while (1) {
         if (protocol_msg_rx (client.puart, client.rx_msg))
             protocol_parse  (&client);
-
         usleep (APP_LOOP_DELAY);
     }
     return 0;
