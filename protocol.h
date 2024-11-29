@@ -23,7 +23,6 @@
 //------------------------------------------------------------------------------
 extern  int     protocol_catch  (ptc_var_t *var);
 extern  int     protocol_check  (ptc_var_t *var);
-//extern  void    protocol_msg_tx (uart_t *puart, char *tx_msg);
 extern  void    protocol_msg_tx (uart_t *puart, void *tx_msg);
 extern  int     protocol_msg_rx (uart_t *puart, char *rx_msg);
 
