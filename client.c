@@ -59,6 +59,10 @@
 //------------------------------------------------------------------------------
 #define UID_ALIVE       0
 #define UID_IPADDR      4
+#define UID_STATUS      47
+
+#define RUN_BOX_ON      RGB_TO_UINT(204, 204, 0)
+#define RUN_BOX_OFF     RGB_TO_UINT(153, 153, 0)
 
 //------------------------------------------------------------------------------
 #define MAIN_LOOP_DELAY     500
@@ -171,38 +175,37 @@ static void *thread_ui_func (void *pclient)
                     onoff ? COLOR_GREEN : p->pui->bc.uint, -1);
         onoff = !onoff;
 
-        if (onoff)  {
-            switch (UIStatus) {
-                case eSTATUS_WAIT:
-                    if (SystemCheckReady)    UIStatus = eSTATUS_RUN;
-                    ui_set_sitem (p->pfb, p->pui, 47, -1, -1, "WAIT");
-                    ui_set_ritem (p->pfb, p->pui, 47, p->pui->bc.uint, -1);
-                    break;
-                case eSTATUS_RUN:
-                    if (RunningTime) {
-                        char run_str[16];
+        switch (UIStatus) {
+            case eSTATUS_WAIT:
+                if (SystemCheckReady)    UIStatus = eSTATUS_RUN;
+                ui_set_sitem (p->pfb, p->pui, UID_STATUS, -1, -1, "WAIT");
+                ui_set_ritem (p->pfb, p->pui, UID_STATUS, p->pui->bc.uint, -1);
+                break;
+            case eSTATUS_RUN:
+                if (RunningTime) {
+                    char run_str[16];
 
-                        memset  (run_str, 0, sizeof(run_str));
-                        sprintf (run_str, "Running(%d)", RunningTime--);
-                        ui_set_ritem (p->pfb, p->pui, 47, COLOR_DARK_ORANGE, -1);
-                        ui_set_sitem (p->pfb, p->pui, 47, -1, -1, run_str);
-                    } else UIStatus = eSTATUS_PRINT;
+                    memset  (run_str, 0, sizeof(run_str));
+                    sprintf (run_str, "Running(%d)", RunningTime--);
+                    ui_set_ritem (p->pfb, p->pui, UID_STATUS, onoff ? RUN_BOX_ON : RUN_BOX_OFF, -1);
+                    ui_set_sitem (p->pfb, p->pui, UID_STATUS, -1, -1, run_str);
+                } else UIStatus = eSTATUS_PRINT;
 
-                    break;
-                case eSTATUS_PRINT:
-                    ui_set_sitem (p->pfb, p->pui, 47, -1, -1, "STOP");
-                    ui_set_ritem (p->pfb, p->pui, 47,
-                        print_test_result (p) ? COLOR_RED : COLOR_GREEN, -1);
-                    UIStatus = eSTATUS_STOP;
-                    break;
-                case eSTATUS_STOP:
-                    break;
-                default :
-                    UIStatus = eSTATUS_WAIT;
-                    break;
-            }
-            ui_update (p->pfb, p->pui, -1);
+                break;
+            case eSTATUS_PRINT:
+                ui_set_sitem (p->pfb, p->pui, UID_STATUS, -1, -1, "STOP");
+                ui_set_ritem (p->pfb, p->pui, UID_STATUS,
+                    print_test_result (p) ? COLOR_RED : COLOR_GREEN, -1);
+                UIStatus = eSTATUS_STOP;
+                break;
+            case eSTATUS_STOP:
+                break;
+            default :
+                UIStatus = eSTATUS_WAIT;
+                break;
         }
+        if (onoff)  ui_update (p->pfb, p->pui, -1);
+
         usleep (UPDATE_UI_DELAY);
     }
     return pclient;
