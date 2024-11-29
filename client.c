@@ -44,6 +44,8 @@
 // https://docs.google.com/spreadsheets/d/1Of7im-2I5m_M-YKswsubrzQAXEGy-japYeH8h_754WA/edit#gid=0
 //
 //------------------------------------------------------------------------------
+//#define __JIG_SELF_MODE__
+
 #define CLIENT_FB       "/dev/fb0"
 #define CLIENT_UART     "/dev/ttyS0"
 
@@ -166,14 +168,16 @@ static void *thread_ui_func (void *pclient)
 {
     static int onoff = 0;
     client_t *p = (client_t *)pclient;
+    char ip_addr[20];
 
-    ui_set_sitem (p->pfb, p->pui, UID_IPADDR, -1, -1, get_board_ip());
-    ui_update (p->pfb, p->pui, -1);
+    memset (ip_addr,    0, sizeof(ip_addr));
+    sprintf(ip_addr, "%s", get_board_ip());
 
     while (1) {
+        onoff = !onoff;
         ui_set_ritem (p->pfb, p->pui, UID_ALIVE,
                     onoff ? COLOR_GREEN : p->pui->bc.uint, -1);
-        onoff = !onoff;
+        ui_set_sitem (p->pfb, p->pui, UID_IPADDR, -1, -1, ip_addr);
 
         switch (UIStatus) {
             case eSTATUS_WAIT:
@@ -186,7 +190,7 @@ static void *thread_ui_func (void *pclient)
                     char run_str[16];
 
                     memset  (run_str, 0, sizeof(run_str));
-                    sprintf (run_str, "Running(%d)", RunningTime--);
+                    sprintf (run_str, "Running(%d)", onoff ? RunningTime : RunningTime--);
                     ui_set_ritem (p->pfb, p->pui, UID_STATUS, onoff ? RUN_BOX_ON : RUN_BOX_OFF, -1);
                     ui_set_sitem (p->pfb, p->pui, UID_STATUS, -1, -1, run_str);
                 } else UIStatus = eSTATUS_PRINT;
@@ -293,8 +297,6 @@ static int update_ui_data (client_t *p, parse_resp_data_t *pdata)
 }
 
 //------------------------------------------------------------------------------
-#define __JIG_SELF_MODE__
-
 void client_data_check (client_t *p, int check_item, void *dev_resp)
 {
     int gid = p->pui->i_item[check_item].grp_id;
