@@ -63,6 +63,8 @@ typedef struct client__t {
     fb_info_t   *pfb;
     ui_grp_t    *pui;
 
+    char        mac[20];
+    char        bip[20];
     // UART communication
     uart_t      *puart;
     char        rx_msg [SERIAL_RESP_SIZE +1];
@@ -123,6 +125,66 @@ static int run_interval_check (struct timeval *t, double interval_ms)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
+#define NLP_MAX_CHAR        19
+#define NLP_ERR_LINE        10
+
+int print_test_result (client_t *p)
+{
+    int check_item, error_cnt, err_line = 0, pos = 0;
+    char error_str [NLP_ERR_LINE][NLP_MAX_CHAR+1];
+    // mac print
+    {
+        char serial_resp[SERIAL_RESP_SIZE], resp[DEVICE_RESP_SIZE];
+
+        memset  (resp, 0, sizeof(resp));
+        sprintf (resp, "%c,%20s", 'P', get_mac_addr());
+        SERIAL_RESP_FORM(serial_resp, 'M', 0, 0, resp);
+        protocol_msg_tx (p->puart, serial_resp);
+        protocol_msg_tx (p->puart, "\r\n");
+//        usleep (100*1000);
+    }
+
+    // error count
+#if 0
+    memset (error_str, 0, sizeof(error_str));
+    for (check_item = 0, error_cnt = 0; check_item < p->pui->i_item_cnt; check_item++) {
+        if (p->pui->i_item[check_item].status != 1) {
+            if (pos + strlen(p->pui->i_item[check_item].name) > NLP_MAX_CHAR) {
+printf ("%s : %s(%d)\n", __func__, error_str[err_line][0], pos);
+                pos = 0, err_line++;
+            }
+            pos += sprintf (&error_str[err_line][pos],"%s ", p->pui->i_item[check_item].name);
+            error_cnt++;
+        }
+    }
+    if (error_cnt) {
+        char serial_resp[SERIAL_RESP_SIZE], resp[DEVICE_RESP_SIZE];
+        int i;
+
+        for (i = 0; i < err_line; i++) {
+            memset  (resp, 0, sizeof(resp));
+            sprintf (resp, "%d,%20s", i, &error_str[i][0]);
+            SERIAL_RESP_FORM(serial_resp, 'E', 0, 0, resp);
+            protocol_msg_tx (p->puart, serial_resp);
+            protocol_msg_tx (p->puart, "\r\n");
+            usleep (100*1000);
+        }
+        #if 1
+        memset  (resp, 0, sizeof(resp));
+        sprintf (resp, "%c,%20s", error_cnt ? 'F' : 'P',
+                                  error_cnt ? "FAIL" : "PASS");
+        SERIAL_RESP_FORM(serial_resp, 'X', 0, 0, resp);
+        protocol_msg_tx (p->puart, serial_resp);
+        protocol_msg_tx (p->puart, "\r\n");
+        usleep (100*1000);
+        #endif
+    }
+#endif
+    return error_cnt;
+}
+
+//------------------------------------------------------------------------------
+#define UI_ID_IPADDR    4
 pthread_t thread_ui;
 
 enum { eSTATUS_WAIT, eSTATUS_RUN, eSTATUS_PRINT, eSTATUS_STOP, eSTATUS_END };
@@ -133,6 +195,9 @@ static void *thread_ui_func (void *pclient)
 {
     static int onoff = 0;
     client_t *p = (client_t *)pclient;
+
+    ui_set_sitem (p->pfb, p->pui, UI_ID_IPADDR, -1, -1, get_board_ip());
+    ui_update (p->pfb, p->pui, -1);
 
     while (1) {
         ui_set_ritem (p->pfb, p->pui, ALIVE_DISPLAY_UI_ID,
@@ -152,17 +217,17 @@ static void *thread_ui_func (void *pclient)
 
                         memset  (run_str, 0, sizeof(run_str));
                         sprintf (run_str, "Running(%d)", RunningTime--);
+//                        ui_set_ritem (p->pfb, p->pui, 47, COLOR_YELLOW, -1);
+                        ui_set_ritem (p->pfb, p->pui, 47, COLOR_DARK_ORANGE, -1);
                         ui_set_sitem (p->pfb, p->pui, 47, -1, -1, run_str);
                     } else UIStatus = eSTATUS_PRINT;
 
                     break;
                 case eSTATUS_PRINT:
-                    // print_macaddr();
-                    // print_error();
-                    UIStatus = eSTATUS_STOP;
                     ui_set_sitem (p->pfb, p->pui, 47, -1, -1, "STOP");
                     ui_set_ritem (p->pfb, p->pui, 47,
-                        SystemCheckReady ? COLOR_RED : COLOR_GREEN, -1);
+                        print_test_result (p) ? COLOR_RED : COLOR_GREEN, -1);
+                    UIStatus = eSTATUS_STOP;
                     break;
                 case eSTATUS_STOP:
                     break;
@@ -263,14 +328,29 @@ static int find_i_item (client_t *p, int gid, int did)
 }
 
 //------------------------------------------------------------------------------
-int client_self_check (struct parse_item *pdata)
+int device_data_check (struct parse_item *pdata)
 {
-    /* IR Thread running */
-    if (pdata->gid == eGID_IR)  return 0;
+    switch (pdata->gid) {
+        /* IR Thread running */
+        case eGID_IR:
+            return 0;
+         case eGID_ETHERNET:
+            if (pdata->did == eETHERNET_IPERF)  return 0;
+            break;
+        case eGID_LED:
+            pdata->status_i = led_data_check (pdata->did, pdata->resp_i);
+            break;
+        case eGID_HEADER:
+            pdata->status_i = header_data_check (pdata->did, pdata->resp_s);
+            break;
 
-    // not implement
-
-    // self check ok
+        /* not implement */
+        case eGID_PWM: case eGID_GPIO: case eGID_AUDIO:
+        default:
+            pdata->status_i = 0;
+            break;
+    }
+    // device_data_check ok
     return 1;
 }
 
@@ -286,13 +366,25 @@ static int update_client_data (client_t *p, struct parse_item *pdata)
         ui_set_ritem (p->pfb, p->pui, uid,
                 (pdata->status_i == 1) ? COLOR_GREEN : COLOR_RED, -1);
     } else {
-        int status = client_self_check(pdata);
-
-        if (status) {
+        if (device_data_check(pdata)) {
             ui_set_ritem (p->pfb, p->pui, uid,
                     pdata->status_i ? COLOR_GREEN : COLOR_RED, -1);
 
+            p->pui->i_item[find_i_item(p, pdata->gid, pdata->did)].status = pdata->status_i;
             p->pui->i_item[find_i_item(p, pdata->gid, pdata->did)].complete = 1;
+
+            // 'C' command receive -> 'P' or 'F' command send to server
+            {
+                char serial_resp[SERIAL_RESP_SIZE], resp[DEVICE_RESP_SIZE];
+
+                memset  (resp, 0, sizeof(resp));
+                sprintf (resp, "%c,%20s", pdata->status_i ? 'P': 'F', pdata->resp_s);
+
+                SERIAL_RESP_FORM(serial_resp, 'S', pdata->gid, pdata->did, resp);
+
+                protocol_msg_tx (p->puart, serial_resp);
+                protocol_msg_tx (p->puart, "\r\n");
+            }
         }
     }
 
@@ -310,15 +402,6 @@ static int update_client_data (client_t *p, struct parse_item *pdata)
                 sprintf (pstr, "%s", (pdata->status_i == 1) ? "PASS" : "FAIL");
             }
             break;
-        case eGID_ETHERNET:
-            if (pdata->did == eETHERNET_MAC) {
-                memset  (pstr, 0, sizeof(pstr));
-                sprintf (pstr, "%c%c:%c%c:%c%c:%c%c:%c%c:%c%c",
-                    pdata->resp_s[0], pdata->resp_s[1], pdata->resp_s[2],  pdata->resp_s[3],
-                    pdata->resp_s[4], pdata->resp_s[5], pdata->resp_s[6],  pdata->resp_s[7],
-                    pdata->resp_s[8], pdata->resp_s[9], pdata->resp_s[10], pdata->resp_s[11]);
-            }
-            break;
         default :
             break;
     }
@@ -327,7 +410,7 @@ static int update_client_data (client_t *p, struct parse_item *pdata)
 }
 
 //------------------------------------------------------------------------------
-//#define __JIG_SELF_MODE__
+#define __JIG_SELF_MODE__
 
 void client_data_check (client_t *p, int check_item, void *dev_resp)
 {
@@ -348,10 +431,16 @@ void client_data_check (client_t *p, int check_item, void *dev_resp)
 #endif
     // if client mode
     {
-        char serial_resp[SERIAL_RESP_SIZE];
+        char serial_resp[SERIAL_RESP_SIZE], *resp;
         SERIAL_RESP_FORM(serial_resp, 'S', gid, did, dev_resp);
+
         protocol_msg_tx (p->puart, serial_resp);
         protocol_msg_tx (p->puart, "\r\n");
+
+        // ADC Check delay
+        resp = (char *)dev_resp;
+        if (resp[0] == 'C')
+            usleep (APP_LOOP_DELAY * 1000);
     }
     usleep (100 * 1000);
 }
@@ -361,8 +450,7 @@ pthread_t thread_check;
 
 static void *thread_check_func (void *pclient)
 {
-    int check_item = 0, pass_item = 0;;
-    int gid, did, uid;
+    int check_item = 0, pass_item = 0, gid, did, uid;
     char dev_resp[DEVICE_RESP_SIZE];
     client_t *p = (client_t *)pclient;
 
@@ -370,27 +458,42 @@ static void *thread_check_func (void *pclient)
 
     while (pass_item != p->pui->i_item_cnt) {
         for (check_item = 0, pass_item = 0; check_item < p->pui->i_item_cnt; check_item++) {
+
             uid = p->pui->i_item[check_item].ui_id;
             gid = p->pui->i_item[check_item].grp_id;
             did = p->pui->i_item[check_item].dev_id;
 
+            switch (gid) {
+                case eGID_LED:
+                    if ((DEVICE_ID(did) == eLED_100M) || (DEVICE_ID(did) == eLED_1G)) {
+                        // if iperf_value == 0 then skip eth led test
+                        if (!get_ethernet_iperf())  {
+                            printf ("%s : skip %d : %d\n", __func__, gid, did);
+                            continue;
+                        }
+                    }
+                    break;
+                default :
+                    break;
+            }
             memset (dev_resp, 0, sizeof(dev_resp));
 
             if (!p->pui->i_item[check_item].complete) {
-                int status;
                 if (!p->pui->i_item[check_item].is_info)
                     ui_set_ritem (p->pfb, p->pui, uid, COLOR_YELLOW, -1);
 
-                status = device_check (p->pui->i_item[check_item].grp_id,
-                                    p->pui->i_item[check_item].dev_id, dev_resp);
+                p->pui->i_item[check_item].status =
+                            device_check (gid, did, dev_resp);
 
-                printf ("\n%s : gid = %d, did = %d, complete = %d, resp = %s\n",
-                        __func__, p->pui->i_item[check_item].grp_id,
-                                p->pui->i_item[check_item].dev_id,
-                                p->pui->i_item[check_item].complete, dev_resp);
+                printf ("\n%s : gid = %d, did = %d, complete = %d, status = %d, resp = %s\n",
+                                __func__, gid, did,
+                                p->pui->i_item[check_item].complete,
+                                p->pui->i_item[check_item].status,
+                                dev_resp);
 
 #if defined (__JIG_SELF_MODE__)
-                p->pui->i_item[check_item].complete = (dev_resp[0] == 'C') ? 0 : status;
+                p->pui->i_item[check_item].complete =
+                    (dev_resp[0] == 'C') ? 0 : p->pui->i_item[check_item].status;
 #endif
                 client_data_check (p, check_item, dev_resp);
             } else pass_item++;
@@ -398,10 +501,8 @@ static void *thread_check_func (void *pclient)
         // loop delay
         usleep (APP_LOOP_DELAY * 1000);
     }
-
     // check complete
     RunningTime = 0;    SystemCheckReady = 0;
-    printf ("%s : exit!\r\n", __func__);
     return pclient;
 }
 
@@ -439,7 +540,7 @@ static void protocol_parse (client_t *p)
             printf ("%s : server reboot!! client reboot!\n", __func__);
             fflush (stdout);
             exit (0);   // normal exit than app restart.
-        case 'A':
+        case 'C': case 'A':
             if (update_client_data (p, &pitem)) {
                 int check_item;
                 if ((check_item = find_i_item (p, pitem.gid, pitem.did)) != -1) {
@@ -457,49 +558,29 @@ static void protocol_parse (client_t *p)
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-#define UI_ID_IPADDR    4
-
-static void board_ip_file (client_t *p)
-{
-    int fd;
-    struct ifreq ifr;
-    char ip_addr[sizeof(struct sockaddr)+1];
-
-    /* this entire function is almost copied from ethtool source code */
-    /* Open control socket. */
-    ui_set_sitem (p->pfb, p->pui, UI_ID_IPADDR, -1, -1, "???.???.???.???");
-
-    if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-    {
-        fprintf (stdout, "Cannot get control socket\n");
-        return 0;
-    }
-    strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-    if (ioctl(fd, SIOCGIFADDR, &ifr) < 0) {
-        fprintf (stdout, "SIOCGIFADDR ioctl Error!!\n");
-        close(fd);
-        return 0;
-    }
-    memset (ip_addr, 0x00, sizeof(ip_addr));
-    inet_ntop(AF_INET, ifr.ifr_addr.sa_data+2, ip_addr, sizeof(struct sockaddr));
-
-    printf ("%s : ip_address = %s\n", __func__, ip_addr);
-    ui_set_sitem (p->pfb, p->pui, UI_ID_IPADDR, -1, -1, ip_addr);
-}
-
-//------------------------------------------------------------------------------
 int main (void)
 {
     client_t client;
 
+    memset (&client, 0, sizeof(client));
+
     // UI, UART
     client_setup (&client);
+
+    pthread_create (&thread_ui,    NULL, thread_ui_func,    (void *)&client);
+    pthread_create (&thread_check, NULL, thread_check_func, (void *)&client);
+
+    ui_set_popup (client.pfb, client.pui,
+                    client.pfb->w /2 , client.pfb->h /4, 2,
+                    COLOR_RED, COLOR_BLACK, COLOR_RED,
+                    2, 1, "%s", "USB F/W Check & Upgrade");
 
     // client device init (lib_dev_check)
     device_setup ();
 
-    pthread_create (&thread_ui,    NULL, thread_ui_func,    (void *)&client);
-    pthread_create (&thread_check, NULL, thread_check_func, (void *)&client);
+    // popup disable
+    client.pui->p_item.timeout = 0;
+
     // Send boot msg & Wait for Ready msg
     {
         char serial_resp[SERIAL_RESP_SIZE];
@@ -507,8 +588,6 @@ int main (void)
         protocol_msg_tx (client.puart, serial_resp);
         protocol_msg_tx (client.puart, "\r\n");
     }
-
-    board_ip_file (&client);
 
 #if defined (__JIG_SELF_MODE__)
     SystemCheckReady = 1;
