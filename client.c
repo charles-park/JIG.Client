@@ -255,6 +255,7 @@ static int update_ui_data (client_t *p, parse_resp_data_t *pdata)
         ui_set_ritem (p->pfb, p->pui, uid,
                 (pdata->status_i == 1) ? COLOR_GREEN : COLOR_RED, -1);
     } else {
+        /* C command received */
         if (device_resp_check(pdata)) {
             ui_set_ritem (p->pfb, p->pui, uid,
                     pdata->status_i ? COLOR_GREEN : COLOR_RED, -1);
@@ -266,14 +267,14 @@ static int update_ui_data (client_t *p, parse_resp_data_t *pdata)
             {
                 char serial_resp[SERIAL_RESP_SIZE], resp[DEVICE_RESP_SIZE];
 
-                memset  (resp, 0, sizeof(resp));
-                sprintf (resp, "%c,%20s", pdata->status_i ? 'P': 'F', pdata->resp_s);
-
+                DEVICE_RESP_FORM_STR(resp, pdata->status_i ? 'P': 'F', pdata->resp_s);
                 SERIAL_RESP_FORM(serial_resp, 'S', pdata->gid, pdata->did, resp);
 
                 protocol_msg_tx (p->puart, serial_resp);    protocol_msg_tx (p->puart, "\r\n");
             }
         }
+        else
+            return 0;
     }
 
     memset (pstr, 0, sizeof(pstr));
@@ -321,7 +322,7 @@ void client_data_check (client_t *p, int check_item, void *dev_resp)
         protocol_msg_tx (p->puart, serial_resp);
         protocol_msg_tx (p->puart, "\r\n");
 
-        // ADC Check delay
+        // cmd check 'C'
         resp = (char *)dev_resp;
         if (resp[0] == 'C')
             usleep (CHECK_CMD_DELAY);

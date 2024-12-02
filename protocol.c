@@ -43,7 +43,7 @@ int protocol_catch (ptc_var_t *var)
     char cmd = var->buf[(var->p_sp + 2) % var->size];
 
     switch (cmd) {
-        case 'B': case 'A': case 'R': case 'O':
+        case 'B': case 'A': case 'R': case 'O': case 'C':
             return 1;
         default :
             printf ("unknown command %c\n", cmd);
