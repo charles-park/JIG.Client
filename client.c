@@ -55,7 +55,7 @@
 
 /* NLP Printer Info */
 #define NLP_MAX_CHAR    19
-#define NLP_ERR_LINE    10
+#define NLP_ERR_LINE    20
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -138,7 +138,7 @@ int print_test_result (client_t *p)
     memset (error_str, 0, sizeof(error_str));
     for (check_item = 0, error_cnt = 0; check_item < p->pui->i_item_cnt; check_item++) {
         i_item_t *i_item = &p->pui->i_item[check_item];
-        if (i_item->status != 1) {
+        if ((i_item->status != 1) || (!i_item->complete)) {
             if (pos + strlen(i_item->name)+1 >= NLP_MAX_CHAR) {
                 pos = 0, err_line++;
             }
@@ -146,9 +146,10 @@ int print_test_result (client_t *p)
             error_cnt++;
         }
     }
+
     // error msg, device check end
     if (error_cnt) {
-        for (pos = 0; pos < err_line; pos++) {
+        for (pos = 0; pos < err_line +1; pos++) {
             memset  (resp, 0, sizeof(resp));
             sprintf (resp, "%d,%20s", pos, &error_str[pos][0]);
             SERIAL_RESP_FORM(serial_resp, 'E', 0, 0, resp);
@@ -349,7 +350,8 @@ static void *thread_check_func (void *pclient)
                     if ((DEVICE_ID(did) == eLED_100M) || (DEVICE_ID(did) == eLED_1G)) {
                         // if iperf_value == 0 then skip eth led test
                         if (!get_ethernet_iperf())  {
-                            printf ("%s : skip %d : %d\n", __func__, gid, did);
+                            printf ("%s : skip %d : %d, complete = %d\n",
+                                __func__, gid, did, p->pui->i_item[check_item].complete);
                             continue;
                         }
                     }
