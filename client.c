@@ -120,7 +120,6 @@ static void toupperstr (char *p)
 }
 
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 int print_test_result (client_t *p)
 {
     int check_item;
@@ -155,12 +154,14 @@ int print_test_result (client_t *p)
             SERIAL_RESP_FORM(serial_resp, 'E', 0, 0, resp);
             protocol_msg_tx (p->puart, serial_resp);    protocol_msg_tx (p->puart, "\r\n");
         }
-        memset  (resp, 0, sizeof(resp));
-        sprintf (resp, "%c,%20s", error_cnt ? 'F' : 'P',
-                                  error_cnt ? "FAIL" : "PASS");
-        SERIAL_RESP_FORM(serial_resp, 'X', 0, 0, resp);
-        protocol_msg_tx (p->puart, serial_resp);    protocol_msg_tx (p->puart, "\r\n");
     }
+
+    memset  (resp, 0, sizeof(resp));
+    sprintf (resp, "%c,%20s", error_cnt ? 'F' : 'P',
+                                error_cnt ? "FAIL" : "PASS");
+    SERIAL_RESP_FORM(serial_resp, 'X', 0, 0, resp);
+    protocol_msg_tx (p->puart, serial_resp);    protocol_msg_tx (p->puart, "\r\n");
+
     return error_cnt;
 }
 
@@ -291,6 +292,10 @@ static int update_ui_data (client_t *p, parse_resp_data_t *pdata)
                 sprintf (pstr, "%s", (pdata->status_i == 1) ? "PASS" : "FAIL");
             }
             break;
+        case eGID_HEADER:
+            memset  (pstr, 0, sizeof(pstr));
+            sprintf (pstr, "%s", (pdata->status_i == 1) ? "PASS" : "FAIL");
+            break;
         default :
             break;
     }
@@ -420,10 +425,43 @@ static void protocol_parse (client_t *p)
         case 'O':
             SystemCheckReady = 1;
             break;
+        case 'X':
+            // force stop
+            if (!RunningTime)
+                RunningTime = 1;
+            break;
+        case 'E':
+            if (!RunningTime)
+                print_test_result (p);
+            break;
         case 'B':
             printf ("%s : server reboot!! client reboot!\n", __func__);
             fflush (stdout);
             exit (0);   // normal exit than app restart.
+        case 'R':
+            // item check status init (re-check)
+            {
+                int check_item = find_item_pos (p, pitem.gid, pitem.did);
+
+                if (SystemCheckReady) {
+                    p->pui->i_item[check_item].complete = 0;
+                    p->pui->i_item[check_item].status = 0;
+                    RunningTime += 5;
+                } else {
+                    char serial_resp[SERIAL_RESP_SIZE], dev_resp[DEVICE_RESP_SIZE];
+
+                    memset (serial_resp, 0, sizeof(serial_resp));
+                    memset (dev_resp, 0, sizeof(dev_resp));
+
+                    p->pui->i_item[check_item].status =
+                                device_check (pitem.gid, pitem.did, dev_resp);
+
+                    SERIAL_RESP_FORM(serial_resp, 'S', pitem.gid, pitem.did, dev_resp);
+                    protocol_msg_tx (p->puart, serial_resp);
+                    protocol_msg_tx (p->puart, "\r\n");
+                }
+            }
+            break;
         case 'C': case 'A':
             if (update_ui_data (p, &pitem)) {
                 int check_item;
