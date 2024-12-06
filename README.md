@@ -20,8 +20,9 @@ root@odroid:~# vi /etc/apt/sources.list
 // system update
 root@odroid:~# apt update && apt upgrade -y
 // ubuntu package install
-root@odroid:~# apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap evtest htop cups cups-bsd iperf3 alsa
-// python3 package
+root@odroid:~# apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap evtest htop cups cups-bsd iperf3 alsa samba lirc
+
+// python3 package (ubuntu 18.04)
 root@odroid:~# pip install aiohttp asyncio
 
 // ubuntu 24.01 version python3 package install
@@ -50,19 +51,6 @@ or
 root@odroid:~# git clone https://github.com/charles-park/JIG.Client
 root@odroid:~# cd JIG.Client
 root@odroid:~/JIG.Client# git submodule update --init --recursive
-```
-
-### iperf3_odroid server mode install
-```
-root@odroid:~# git clone https://github.com/charles-park/iperf3_odroid
-
-root@odroid:~# cd iperf3_odroid
-root@odroid:~/iperf3_odroid# apt install iperf3
-root@odroid:~/iperf3_odroid# make
-root@odroid:~/iperf3_odroid# make install
-
-root@odroid:~/iperf3_odroid# cd service
-root@odroid:~/iperf3_odroid/service# ./install
 ```
 
 ### Auto login
