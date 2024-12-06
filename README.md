@@ -20,9 +20,10 @@ root@odroid:~# vi /etc/apt/sources.list
 // system update
 root@odroid:~# apt update && apt upgrade -y
 // ubuntu package install
-root@odroid:~# apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap evtesthtop cups cups-bsd iperf3
+root@odroid:~# apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap evtest htop cups cups-bsd iperf3
 // python3 package
 root@odroid:~# pip install aiohttp asyncio
+root@odroid:~# apt install python3-aiohttp python3-async-timeout
 
 // system reboot
 root@odroid:~# reboot
