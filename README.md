@@ -7,6 +7,9 @@
 
 ### Install package
 ```
+// upgrade ubuntu system 22.04 -> 24.01
+root@odroid:~# do-release-upgrade
+
 root@odroid:~# uname -a
 Linux odroid 4.9.312-6 #1 SMP PREEMPT Wed Jun 29 17:01:17 UTC 2022 aarch64 aarch64 aarch64 GNU/Linux
 
@@ -17,7 +20,7 @@ root@odroid:~# vi /etc/apt/sources.list
 // system update
 root@odroid:~# apt update && apt upgrade -y
 // ubuntu package install
-root@odroid:~# apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap evtest
+root@odroid:~# apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap evtesthtop cups cups-bsd iperf3
 // python3 package
 root@odroid:~# pip install aiohttp asyncio
 
