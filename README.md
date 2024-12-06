@@ -76,14 +76,14 @@ Type=idle
 * edit tool save
   save exit [Ctrl+ k, Ctrl + q]
 
-### Disable Console (serial ttyS0), hdmi 1920xs1080, gpio overlay disable
+### Disable Console (serial ttyS0), hdmi 1920x1080, gpio overlay disable
 ```
 root@odroid:~# vi /medoa/boot/boot.ini
 ...
 # setenv condev "console=ttyS0,115200n8"   # on both
 ...
 
-root@odroid:~# vi /medoa/boot/boot.ini
+root@odroid:~# vi /medoa/boot/config.ini
 ...
 ...
 ; display_autodetect=true
