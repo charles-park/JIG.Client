@@ -20,7 +20,7 @@ User=root
 # client folder
 WorkingDirectory=/root/JIG.Client
 
-ExecStartPre=/bin/sleep 5
+ExecStartPre=/bin/sleep 10 
 ExecStart=/root/JIG.Client/service/jig-service.sh
 
 # on-success의 경우 (Kill -2) 옵션으로 종료시 재시작 합니다.
