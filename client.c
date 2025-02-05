@@ -2,9 +2,9 @@
 /**
  * @file client.c
  * @author charles-park (charles.park@hardkernel.com)
- * @brief ODROID-C4 JIG Client App.
+ * @brief ODROID-C5 JIG Client App.
  * @version 2.0
- * @date 2024-11-25
+ * @date 2025-02-05
  *
  * @package apt install iperf3, nmap, ethtool, usbutils, alsa-utils
  *
@@ -49,7 +49,6 @@
 #define CLIENT_FB       "/dev/fb0"
 #define CLIENT_UART     "/dev/ttyS0"
 
-// #define CLIENT_UI       "ui_c4_client.cfg"
 #define CLIENT_UI       "ui_client.cfg"
 
 #define UART_BAUDRATE   115200
