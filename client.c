@@ -49,7 +49,8 @@
 #define CLIENT_FB       "/dev/fb0"
 #define CLIENT_UART     "/dev/ttyS0"
 
-#define CLIENT_UI       "ui_c4_client.cfg"
+// #define CLIENT_UI       "ui_c4_client.cfg"
+#define CLIENT_UI       "ui_client.cfg"
 
 #define UART_BAUDRATE   115200
 
