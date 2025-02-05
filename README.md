@@ -1,5 +1,5 @@
 # JIG.Client
-2024 New version JIG-Client
+2024 New version JIG-Client(branch odroid-c4)
 * Document : https://docs.google.com/spreadsheets/d/1igBObU7CnP6FRaRt-x46l5R77-8uAKEskkhthnFwtpY/edit?gid=719914769#gid=719914769
 
 ### ODROID-C4 (2024-11-18)
