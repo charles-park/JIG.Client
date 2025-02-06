@@ -492,11 +492,6 @@ int main (void)
     pthread_create (&thread_ui,    NULL, thread_ui_func,    (void *)&client);
     pthread_create (&thread_check, NULL, thread_check_func, (void *)&client);
 
-    ui_set_popup (client.pfb, client.pui,
-                    client.pfb->w * 80 / 100 , client.pfb->h * 30 / 100, 2,
-                    COLOR_RED, COLOR_BLACK, COLOR_RED,
-                    2, 1, "%s", "USB F/W Check & Upgrade");
-
     // client device init (lib_dev_check)
     device_setup ();
 

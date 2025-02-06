@@ -20,11 +20,11 @@ User=root
 # client folder
 WorkingDirectory=/root/JIG.Client
 
-ExecStartPre=/bin/sleep 10 
+ExecStartPre=/bin/sleep 10
 ExecStart=/root/JIG.Client/service/jig-service.sh
 
-# on-success의 경우 (Kill -2) 옵션으로 종료시 재시작 합니다.
-# on-failure의 경우 (kill -9) 옵션으로 종료시 재시작 합니다.
+# on-success의 경우 (Kill -2) 옵션으로 종료시 재시작 합니다. (exit 0)
+# on-failure의 경우 (kill -9) 옵션으로 종료시 재시작 합니다. (exit 1)
 # always 항상 재시작 합니다.
 Restart=on-success
 
