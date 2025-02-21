@@ -51,7 +51,7 @@
 
 #define CLIENT_UI       "ui_client.cfg"
 
-#define UART_BAUDRATE   115200
+#define UART_BAUDRATE   921600
 
 /* NLP Printer Info */
 #define NLP_MAX_CHAR    19
@@ -74,7 +74,9 @@
 #define CHECK_CMD_DELAY     (500*1000)
 #define UPDATE_UI_DELAY     (500*1000)
 
+//------------------------------------------------------------------------------
 // system state
+//------------------------------------------------------------------------------
 enum { eSTATUS_WAIT, eSTATUS_RUN, eSTATUS_PRINT, eSTATUS_STOP, eSTATUS_END };
 
 typedef struct client__t {
@@ -100,6 +102,8 @@ pthread_t thread_check;
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
+#if 0
+//------------------------------------------------------------------------------
 // 문자열 변경 함수. 입력 포인터는 반드시 메모리가 할당되어진 변수여야 함.
 //------------------------------------------------------------------------------
 static void tolowerstr (char *p)
@@ -118,14 +122,17 @@ static void toupperstr (char *p)
     for (i = 0; i < c; i++, p++)
         *p = toupper(*p);
 }
+//------------------------------------------------------------------------------
+#endif
 
+//------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 int print_test_result (client_t *p)
 {
     int check_item;
     int error_cnt, err_line = 0, pos = 0;
     char error_str [NLP_ERR_LINE][NLP_MAX_CHAR];
-    char serial_resp[SERIAL_RESP_SIZE], resp[DEVICE_RESP_SIZE];
+    char serial_resp[SERIAL_RESP_SIZE +1], resp[DEVICE_RESP_SIZE+ 1];
 
     // mac print
     memset  (resp, 0, sizeof(resp));
@@ -266,7 +273,7 @@ static int update_ui_data (client_t *p, parse_resp_data_t *pdata)
 
             // 'C' command receive -> 'P' or 'F' command send to server
             {
-                char serial_resp[SERIAL_RESP_SIZE], resp[DEVICE_RESP_SIZE];
+                char serial_resp[SERIAL_RESP_SIZE +1], resp[DEVICE_RESP_SIZE +1];
 
                 DEVICE_RESP_FORM_STR(resp, pdata->status_i ? 'P': 'F', pdata->resp_s);
                 SERIAL_RESP_FORM(serial_resp, 'S', pdata->gid, pdata->did, resp);
@@ -321,8 +328,8 @@ void client_data_check (client_t *p, int check_item, void *dev_resp)
 #endif
     // if client mode
     {
-        char serial_resp[SERIAL_RESP_SIZE], *resp;
-        SERIAL_RESP_FORM(serial_resp, 'S', gid, did, dev_resp);
+        char serial_resp[SERIAL_RESP_SIZE +1], *resp;
+        SERIAL_RESP_FORM(serial_resp, 'S', gid, did, (char *)dev_resp);
 
         protocol_msg_tx (p->puart, serial_resp);
         protocol_msg_tx (p->puart, "\r\n");
@@ -400,7 +407,7 @@ static int client_setup (client_t *p)
 {
     if ((p->pfb = fb_init (CLIENT_FB)) == NULL)         exit(1);
     if ((p->pui = ui_init (p->pfb, CLIENT_UI)) == NULL) exit(1);
-    // ODROID-C4 (115200 baud)
+    // ODROID-C5 (921600 baud)
     if ((p->puart = uart_init (CLIENT_UART, UART_BAUDRATE)) != NULL) {
         if (ptc_grp_init (p->puart, 1)) {
             if (!ptc_func_init (p->puart, 0, SERIAL_RESP_SIZE, protocol_check, protocol_catch)) {
@@ -448,7 +455,7 @@ static void protocol_parse (client_t *p)
                     p->pui->i_item[check_item].status = 0;
                     RunningTime += 5;
                 } else {
-                    char serial_resp[SERIAL_RESP_SIZE], dev_resp[DEVICE_RESP_SIZE];
+                    char serial_resp[SERIAL_RESP_SIZE +1], dev_resp[DEVICE_RESP_SIZE +1];
 
                     memset (serial_resp, 0, sizeof(serial_resp));
                     memset (dev_resp, 0, sizeof(dev_resp));
@@ -500,7 +507,7 @@ int main (void)
 
     // Send boot msg & Wait for Ready msg
     {
-        char serial_resp[SERIAL_RESP_SIZE];
+        char serial_resp[SERIAL_RESP_SIZE +1];
 
         SystemCheckReady = 0;
         SERIAL_RESP_FORM(serial_resp, 'R', -1, -1, NULL);
