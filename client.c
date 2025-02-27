@@ -50,6 +50,7 @@
 #define CLIENT_UART     "/dev/ttyS0"
 
 #define CLIENT_UI       "ui_client.cfg"
+#define CLIENT_DEVICE   "dev_client.cfg"
 
 #define UART_BAUDRATE   921600
 
@@ -500,7 +501,7 @@ int main (void)
     pthread_create (&thread_check, NULL, thread_check_func, (void *)&client);
 
     // client device init (lib_dev_check)
-    device_setup ();
+    device_setup (CLIENT_DEVICE);
 
     // popup disable
     client.pui->p_item.timeout = 0;
