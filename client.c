@@ -44,8 +44,6 @@
 // https://docs.google.com/spreadsheets/d/1Of7im-2I5m_M-YKswsubrzQAXEGy-japYeH8h_754WA/edit#gid=0
 //
 //------------------------------------------------------------------------------
-//#define __JIG_SELF_MODE__
-
 #define CLIENT_FB       "/dev/fb0"
 #define CLIENT_UART     "/dev/ttyS0"
 
