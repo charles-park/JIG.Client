@@ -50,7 +50,7 @@
 #define CLIENT_UI       "ui_client.cfg"
 #define CLIENT_DEVICE   "dev_client.cfg"
 
-#define UART_BAUDRATE   921600
+#define UART_BAUDRATE   115200
 
 /* NLP Printer Info */
 #define NLP_MAX_CHAR    19
@@ -406,7 +406,7 @@ static int client_setup (client_t *p)
 {
     if ((p->pfb = fb_init (CLIENT_FB)) == NULL)         exit(1);
     if ((p->pui = ui_init (p->pfb, CLIENT_UI)) == NULL) exit(1);
-    // ODROID-C5 (921600 baud)
+    // ODROID-C4 (115200 baud)
     if ((p->puart = uart_init (CLIENT_UART, UART_BAUDRATE)) != NULL) {
         if (ptc_grp_init (p->puart, 1)) {
             if (!ptc_func_init (p->puart, 0, SERIAL_RESP_SIZE, protocol_check, protocol_catch)) {
