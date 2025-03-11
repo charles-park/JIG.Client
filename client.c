@@ -392,7 +392,6 @@ static void *thread_check_func (void *pclient)
                     if (p->pui->i_item[check_item].status) {
                         p->pui->p_item.timeout = 1; sleep (1);
                     }
-                    else    exit(1);
                 }
                 printf ("\n%s : gid = %d, did = %d, complete = %d, status = %d, resp = %s\n",
                                 __func__, gid, did,
