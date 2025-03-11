@@ -216,8 +216,10 @@ static void *thread_ui_func (void *pclient)
                 UIStatus = eSTATUS_WAIT;
                 break;
         }
-        if (onoff)  ui_update (p->pfb, p->pui, -1);
-
+        if (onoff) {
+            if (p->pui->p_item.timeout) p->pui->p_item.timeout--;
+            ui_update (p->pfb, p->pui, -1);
+        }
         usleep (UPDATE_UI_DELAY);
     }
     return pclient;
@@ -377,9 +379,21 @@ static void *thread_check_func (void *pclient)
                 if (!p->pui->i_item[check_item].is_info)
                     ui_set_ritem (p->pfb, p->pui, uid, COLOR_YELLOW, -1);
 
+                if (gid == eGID_FW) {
+                        ui_set_popup (p->pfb, p->pui,
+                        p->pfb->w * 80 / 100 , p->pfb->h * 30 / 100, 2,
+                        COLOR_RED, COLOR_BLACK, COLOR_RED,
+                        2, 10, "%s", "USB F/W Check & Upgrade");
+                }
                 p->pui->i_item[check_item].status =
-                            device_check (gid, did, dev_resp);
+                    device_check (gid, did, dev_resp);
 
+                if (gid == eGID_FW) {
+                    if (p->pui->i_item[check_item].status) {
+                        p->pui->p_item.timeout = 1; sleep (1);
+                    }
+                    else    exit(1);
+                }
                 printf ("\n%s : gid = %d, did = %d, complete = %d, status = %d, resp = %s\n",
                                 __func__, gid, did,
                                 p->pui->i_item[check_item].complete,
@@ -392,6 +406,13 @@ static void *thread_check_func (void *pclient)
 #endif
                 client_data_check (p, check_item, dev_resp);
             } else pass_item++;
+
+            // force stop
+            if (!RunningTime) {
+                // check complete
+                RunningTime = 0;    SystemCheckReady = 0;
+                return pclient;
+            }
         }
         // loop delay
         usleep (FUNC_LOOP_DELAY);
@@ -433,7 +454,7 @@ static void protocol_parse (client_t *p)
             break;
         case 'X':
             // force stop
-            if (!RunningTime)
+            if (RunningTime != 0)
                 RunningTime = 1;
             break;
         case 'E':
