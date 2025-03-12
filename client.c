@@ -47,8 +47,8 @@
 #define CLIENT_FB       "/dev/fb0"
 #define CLIENT_UART     "/dev/ttyS0"
 
-#define CLIENT_UI       "ui_client.cfg"
-#define CLIENT_DEVICE   "dev_client.cfg"
+// #define CLIENT_UI       "ui_client.cfg"
+// #define CLIENT_DEVICE   "dev_client.cfg"
 
 #define UART_BAUDRATE   115200
 
@@ -101,7 +101,6 @@ pthread_t thread_check;
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-#if 0
 //------------------------------------------------------------------------------
 // 문자열 변경 함수. 입력 포인터는 반드시 메모리가 할당되어진 변수여야 함.
 //------------------------------------------------------------------------------
@@ -114,6 +113,7 @@ static void tolowerstr (char *p)
 }
 
 //------------------------------------------------------------------------------
+#if 0
 static void toupperstr (char *p)
 {
     int i, c = strlen(p);
@@ -423,11 +423,50 @@ static void *thread_check_func (void *pclient)
 }
 
 //------------------------------------------------------------------------------
+const char *get_model_cmd = "cat /proc/device-tree/model && sync";
+
+static int get_model_name (char *pname)
+{
+    FILE *fp;
+    char *ptr, cmd_line[STR_PATH_LENGTH];
+
+    if (access ("/proc/device-tree/model", F_OK) != 0)
+        return 0;
+
+    memset (cmd_line, 0, sizeof(cmd_line));
+
+    if ((fp = popen(get_model_cmd, "r")) != NULL) {
+        if (NULL != fgets (cmd_line, sizeof(cmd_line), fp)) {
+            if ((ptr = strstr (cmd_line, "ODROID-")) != NULL) {
+                strncpy (pname, ptr, strlen(ptr));
+                tolowerstr (pname);
+                pclose(fp);
+                return 1;
+            }
+        }
+        pclose(fp);
+    }
+    return 0;
+}
+
+//------------------------------------------------------------------------------
 static int client_setup (client_t *p)
 {
-    if ((p->pfb = fb_init (CLIENT_FB)) == NULL)         exit(1);
-    if ((p->pui = ui_init (p->pfb, CLIENT_UI)) == NULL) exit(1);
-    // ODROID-C4 (115200 baud)
+    char ui_fname[STR_PATH_LENGTH], dev_fname[STR_PATH_LENGTH];
+    char model_name[STR_NAME_LENGTH];
+
+    memset (ui_fname,   0, sizeof(ui_fname));
+    memset (dev_fname,  0, sizeof(dev_fname));
+    memset (model_name, 0, sizeof(model_name));
+
+    if (!get_model_name(model_name))    exit(1);
+
+    sprintf (ui_fname,  "%s_ui.cfg",  &model_name[strlen("ODROID-")]);
+    sprintf (dev_fname, "%s_dev.cfg", &model_name[strlen("ODROID-")]);
+
+    if ((p->pfb = fb_init (CLIENT_FB)) == NULL)        exit(1);
+    if ((p->pui = ui_init (p->pfb, ui_fname)) == NULL) exit(1);
+    // Default Baudrate (115200 baud)
     if ((p->puart = uart_init (CLIENT_UART, UART_BAUDRATE)) != NULL) {
         if (ptc_grp_init (p->puart, 1)) {
             if (!ptc_func_init (p->puart, 0, SERIAL_RESP_SIZE, protocol_check, protocol_catch)) {
@@ -435,6 +474,9 @@ static int client_setup (client_t *p)
                 exit(1);
             }
         }
+        // client device init (lib_dev_check)
+        if (!device_setup (dev_fname))  exit(1);
+
         return 1;
     }
     return 0;
@@ -518,9 +560,6 @@ int main (void)
 
     pthread_create (&thread_ui,    NULL, thread_ui_func,    (void *)&client);
     pthread_create (&thread_check, NULL, thread_check_func, (void *)&client);
-
-    // client device init (lib_dev_check)
-    device_setup (CLIENT_DEVICE);
 
     // popup disable
     client.pui->p_item.timeout = 0;
