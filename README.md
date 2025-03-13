@@ -32,13 +32,13 @@ root@server:~# git config --global user.name "charles-park"
 
 ### Clone the reopsitory with submodule
 ```
-root@server:~# git clone -b jig-c5 --recursive https://github.com/charles-park/JIG.Server
+root@server:~# git clone -b client.v20 --recursive https://github.com/charles-park/JIG.Client
 
 or
 
-root@server:~# git clone -b jig-c5 https://github.com/charles-park/JIG.Server
-root@server:~# cd JIG.Server
-root@server:~/JIG.Server# git submodule update --init --recursive
+root@server:~# git clone -b client.v20 https://github.com/charles-park/JIG.Client
+root@server:~# cd JIG.Client
+root@server:~/JIG.Client# git submodule update --init --recursive
 ```
 
 ### Auto login
