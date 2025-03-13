@@ -276,7 +276,7 @@ static int update_ui_data (client_t *p, parse_resp_data_t *pdata)
             {
                 char serial_resp[SERIAL_RESP_SIZE +1], resp[DEVICE_RESP_SIZE +1];
 
-                DEVICE_RESP_FORM_STR(resp, pdata->status_i ? 'P': 'F', pdata->resp_s);
+                DEVICE_RESP_FORM_STR(resp, (pdata->status_i == 1) ? 'P': 'F', pdata->resp_s);
                 SERIAL_RESP_FORM(serial_resp, 'S', pdata->gid, pdata->did, resp);
 
                 protocol_msg_tx (p->puart, serial_resp);    protocol_msg_tx (p->puart, "\r\n");
@@ -287,7 +287,7 @@ static int update_ui_data (client_t *p, parse_resp_data_t *pdata)
     }
 
     memset (pstr, 0, sizeof(pstr));
-        memcpy (pstr, pdata->resp_s, strlen(pdata->resp_s));
+    memcpy (pstr, pdata->resp_s, strlen(pdata->resp_s));
 
     switch (pdata->gid) {
         case eGID_SYSTEM:
