@@ -83,6 +83,8 @@ typedef struct client__t {
     fb_info_t   *pfb;
     ui_grp_t    *pui;
 
+    // model name str
+    char        model[STR_NAME_LENGTH];
     // UART communication
     uart_t      *puart;
     char        rx_msg [SERIAL_RESP_SIZE +1];
@@ -113,7 +115,6 @@ static void tolowerstr (char *p)
 }
 
 //------------------------------------------------------------------------------
-#if 0
 static void toupperstr (char *p)
 {
     int i, c = strlen(p);
@@ -122,7 +123,6 @@ static void toupperstr (char *p)
         *p = toupper(*p);
 }
 //------------------------------------------------------------------------------
-#endif
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -184,7 +184,11 @@ static void *thread_ui_func (void *pclient)
     while (1) {
         onoff = !onoff;
         ui_set_ritem (p->pfb, p->pui, UID_ALIVE,
-                    onoff ? COLOR_GREEN : p->pui->bc.uint, -1);
+            onoff ? COLOR_GREEN : p->pui->bc.uint, -1);
+
+        ui_set_sitem (p->pfb, p->pui, UID_ALIVE,
+                    -1, -1, onoff ? p->model : __DATE__);
+
         ui_set_sitem (p->pfb, p->pui, UID_IPADDR, -1, -1, ip_addr);
 
         switch (UIStatus) {
@@ -439,7 +443,6 @@ static int get_model_name (char *pname)
         if (NULL != fgets (cmd_line, sizeof(cmd_line), fp)) {
             if ((ptr = strstr (cmd_line, "ODROID-")) != NULL) {
                 strncpy (pname, ptr, strlen(ptr));
-                tolowerstr (pname);
                 pclose(fp);
                 return 1;
             }
@@ -453,16 +456,16 @@ static int get_model_name (char *pname)
 static int client_setup (client_t *p)
 {
     char ui_fname[STR_PATH_LENGTH], dev_fname[STR_PATH_LENGTH];
-    char model_name[STR_NAME_LENGTH];
 
     memset (ui_fname,   0, sizeof(ui_fname));
     memset (dev_fname,  0, sizeof(dev_fname));
-    memset (model_name, 0, sizeof(model_name));
 
-    if (!get_model_name(model_name))    exit(1);
+    if (!get_model_name(p->model))  exit(1);
 
-    sprintf (ui_fname,  "%s_ui.cfg",  &model_name[strlen("ODROID-")]);
-    sprintf (dev_fname, "%s_dev.cfg", &model_name[strlen("ODROID-")]);
+    tolowerstr (p->model);
+    sprintf (ui_fname,  "%s_ui.cfg",  &p->model[strlen("ODROID-")]);
+    sprintf (dev_fname, "%s_dev.cfg", &p->model[strlen("ODROID-")]);
+    toupperstr (p->model);
 
     if ((p->pfb = fb_init (CLIENT_FB)) == NULL)        exit(1);
     if ((p->pui = ui_init (p->pfb, ui_fname)) == NULL) exit(1);
