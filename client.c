@@ -455,10 +455,11 @@ static int get_model_name (char *pname)
 //------------------------------------------------------------------------------
 static int client_setup (client_t *p)
 {
-    char ui_fname[STR_PATH_LENGTH], dev_fname[STR_PATH_LENGTH];
+    char fname [STR_PATH_LENGTH],ui_fname [STR_NAME_LENGTH * 2], dev_fname[STR_NAME_LENGTH * 2];
 
-    memset (ui_fname,   0, sizeof(ui_fname));
-    memset (dev_fname,  0, sizeof(dev_fname));
+    memset (fname,     0, sizeof(fname));
+    memset (ui_fname,  0, sizeof(ui_fname));
+    memset (dev_fname, 0, sizeof(dev_fname));
 
     if (!get_model_name(p->model))  exit(1);
 
@@ -468,7 +469,9 @@ static int client_setup (client_t *p)
     toupperstr (p->model);
 
     if ((p->pfb = fb_init (CLIENT_FB)) == NULL)        exit(1);
-    if ((p->pui = ui_init (p->pfb, ui_fname)) == NULL) exit(1);
+
+    find_file_path (ui_fname, fname);
+    if ((p->pui = ui_init (p->pfb, fname)) == NULL) exit(1);
     // Default Baudrate (115200 baud)
     if ((p->puart = uart_init (CLIENT_UART, UART_BAUDRATE)) != NULL) {
         if (ptc_grp_init (p->puart, 1)) {
