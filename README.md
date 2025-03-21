@@ -1,62 +1,52 @@
 # JIG.Client
+
 2024 New version JIG-Client (JIG Client Base version)
+2025 New version JIG-Client (branch client.v20)
+
 * Document : https://docs.google.com/spreadsheets/d/1igBObU7CnP6FRaRt-x46l5R77-8uAKEskkhthnFwtpY/edit?gid=719914769#gid=719914769
 
-### ODROID-C4 (2024-11-18)
-* Linux OS Image https://dn.odroid.com/S905X3/ODROID-C4/Ubuntu/22.04/ubuntu-22.04-4.9-minimal-odroid-c4-hc4-20220705.img.xz
-* LIRC Install for IR : https://wiki.odroid.com/odroid-c4/application_note/lirc/lirc_ubuntu18.04#tab__odroid-c2n2c4hc4
 
+### ODROID-C5 (2025-01-06)
+* Linux OS Image : factory-odroidc5-0307.img (odroidh server)
+* jig-c5.base.0307.img (auto login, all ubuntu package installed, lirc installed, python3 module installed, git default setting)
+* jig-c5.client-c4.img, jig-c5.client-c5.img (2025.03.13 first release)
+  
 ### Install package
 ```
-// upgrade ubuntu system 22.04 -> 24.01
-root@odroid:~# do-release-upgrade
-
-root@odroid:~# uname -a
-Linux odroid 4.9.312-6 #1 SMP PREEMPT Wed Jun 29 17:01:17 UTC 2022 aarch64 aarch64 aarch64 GNU/Linux
-
-root@odroid:~# vi /etc/apt/sources.list
-* disable "jammy-updates" line
-...
-
-// system update
-root@odroid:~# apt update && apt upgrade -y
 // ubuntu package install
-root@odroid:~# apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap evtest htop cups cups-bsd iperf3 alsa samba lirc
-
-// python3 package (ubuntu 18.04)
-root@odroid:~# pip install aiohttp asyncio
+root@server:~# apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap evtest htop cups cups-bsd iperf3 alsa samba lirc evtest
 
 // ubuntu 24.01 version python3 package install
-root@odroid:~# apt install python3-aiohttp python3-async-timeout
+root@server:~# apt install python3-aiohttp python3-async-timeout
 
 // system reboot
-root@odroid:~# reboot
+root@server:~# reboot
 
-root@odroid:~# uname -a
-Linux odroid 4.9.337-17 #1 SMP PREEMPT Mon Sep 2 05:42:54 UTC 2024 aarch64 aarch64 aarch64 GNU/Linux
+root@server:~# uname -a
+Linux server 5.15.153-odroid-arm64 #101 SMP PREEMPT Fri Mar 7 11:28:21 KST 2025 aarch64 aarch64 aarch64 GNU/Linux
 
 ```
 
 ### Github setting
 ```
-root@odroid:~# git config --global user.email "charles.park@hardkernel.com"
-root@odroid:~# git config --global user.name "charles-park"
+root@server:~# git config --global user.email "charles.park@hardkernel.com"
+root@server:~# git config --global user.name "charles-park"
 ```
 
 ### Clone the reopsitory with submodule
 ```
-root@odroid:~# git clone --recursive https://github.com/charles-park/JIG.Client
+root@server:~# git clone -b client.v20 --recursive https://github.com/charles-park/JIG.Client
 
 or
 
-root@odroid:~# git clone https://github.com/charles-park/JIG.Client
-root@odroid:~# cd JIG.Client
-root@odroid:~/JIG.Client# git submodule update --init --recursive
+root@server:~# git clone -b client.v20 https://github.com/charles-park/JIG.Client
+root@server:~# cd JIG.Client
+root@server:~/JIG.Client# git submodule update --init --recursive
 ```
 
 ### Auto login
 ```
-root@odroid:~# systemctl edit getty@tty1.service
+root@server:~# systemctl edit getty@tty1.service
 ```
 ```
 [Service]
@@ -69,34 +59,64 @@ Type=idle
 
 ### Disable Console (serial ttyS0), hdmi 1920x1080, gpio overlay disable
 ```
-root@odroid:~# vi /medoa/boot/boot.ini
+root@server:~# vi /boot/boot.ini
 ...
 # setenv condev "console=ttyS0,115200n8"   # on both
 ...
 
-root@odroid:~# vi /medoa/boot/config.ini
+root@server:~# vi /medoa/boot/config.ini
 ...
-...
-; display_autodetect=true
-display_autodetect=false
-...
-; overlays="spi0 i2c0 i2c1 uart0"
-overlays=""
+overlays="i2c0 i2c1"
+; overlays=""
 ...
 ...
 ```
+
+### Sound setup (TDM-C-T9015-audio-hifi-alsaPORT-i2s)
+```
+// Codec info
+root@server:~# aplay -l
+**** List of PLAYBACK Hardware Devices ****
+card 0: AMLAUGESOUND [AML-AUGESOUND], device 0: TDM-B-dummy-alsaPORT-i2s2hdmi soc:dummy-0 []
+  Subdevices: 1/1
+  Subdevice #0: subdevice #0
+card 0: AMLAUGESOUND [AML-AUGESOUND], device 1: SPDIF-B-dummy-alsaPORT-spdifb soc:dummy-1 []
+  Subdevices: 1/1
+  Subdevice #0: subdevice #0
+card 0: AMLAUGESOUND [AML-AUGESOUND], device 2: TDM-C-T9015-audio-hifi-alsaPORT-i2s fe01a000.t9015-2 []
+  Subdevices: 1/1
+  Subdevice #0: subdevice #0
+card 0: AMLAUGESOUND [AML-AUGESOUND], device 3: SPDIF-dummy-alsaPORT-spdif soc:dummy-3 []
+  Subdevices: 1/1
+  Subdevice #0: subdevice #0
+
+// config mixer (mute off)
+root@server:~# amixer sset 'TDMOUT_C Mute' off
+```
+
+* Sound test (Sign-wave 1Khz)
+```
+// use speaker-test
+root@server:~# speaker-test -D hw:0,2 -c 2 -t sine -f 1000           # pin header target, all
+root@server:~# speaker-test -D hw:0,2 -c 2 -t sine -f 1000 -p 1 -s 1 # pin header target, left
+root@server:~# speaker-test -D hw:0,2 -c 2 -t sine -f 1000 -p 1 -s 2 # pin header target, right
+
+// or use aplay with (1Khz audio file)
+root@server:~# aplay -Dhw:0,2 {audio file} -d {play time}
+```
+
 ### Disable screen off
 ```
-root@odroid:~# vi ~/.bashrc
+root@server:~# vi ~/.bashrc
 ...
 setterm -blank 0 -powerdown 0 -powersave off 2>/dev/null
 echo 0 > /sys/class/graphics/fb0/blank
 ...
 ```
 
-### server static ip settings
+### server static ip settings (For Debugging)
 ```
-root@odroid:~# vi /etc/netplan/01-netcfg.yaml
+root@server:~# vi /etc/netplan/01-netcfg.yaml
 ```
 ```
 network:
@@ -114,14 +134,14 @@ network:
 
 ```
 ```
-root@odroid:~# netplan apply
-root@odroid:~# ifconfig
+root@server:~# netplan apply
+root@server:~# ifconfig
 ```
 
 ### server samba config
 ```
-root@odroid:~# smbpasswd -a root
-root@odroid:~# vi /etc/samba/smb.conf
+root@server:~# smbpasswd -a root
+root@server:~# vi /etc/samba/smb.conf
 ```
 ```
 [odroid]
@@ -134,16 +154,16 @@ root@odroid:~# vi /etc/samba/smb.conf
    directory mask = 0755
 ```
 ```
-root@odroid:~# service smbd restart
+root@server:~# service smbd restart
 ```
 
 ### Overlay root
 * overlayroot enable
 ```
-root@odroid:~# update-initramfs -c -k $(uname -r)
+root@server:~# update-initramfs -c -k $(uname -r)
 update-initramfs: Generating /boot/initrd.img-4.9.337-17
 
-root@odroid:~# mkimage -A arm64 -O linux -T ramdisk -C none -a 0 -e 0 -n uInitrd -d /boot/initrd.img-$(uname -r) /media/boot/uInitrd 
+root@server:~# mkimage -A arm64 -O linux -T ramdisk -C none -a 0 -e 0 -n uInitrd -d /boot/initrd.img-$(uname -r) /boot/uInitrd 
 Image Name:   uInitrd
 Created:      Fri Oct 27 04:27:58 2023
 Image Type:   AArch64 Linux RAMDisk Image (uncompressed)
@@ -160,15 +180,13 @@ overlayroot="tmpfs"
 * overlayroot disable
 ```
 // get write permission
-root@odroid:~# overlayroot-chroot 
+root@server:~# overlayroot-chroot 
 INFO: Chrooting into [/media/root-ro]
-root@odroid:~# 
+root@server:~# 
 
 // Change overlayroot value "tmpfs" to "" for overlayroot disable
-root@odroid:~# vi /etc/overlayroot.conf
+root@server:~# vi /etc/overlayroot.conf
 ...
 overlayroot_cfgdisk="disabled"
 overlayroot=""
 ```
-
-

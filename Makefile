@@ -6,8 +6,8 @@ CFLAGS  = -W -Wall -g
 CFLAGS  += -D__CLIENT_APP__
 # CFLAGS  += -D__IPERF3_ODROID__
 
-# JIG R/W Test
-# CFLAGS  += -D__JIG_RW_TEST__
+# JIG SELF Test Mode
+# CFLAGS  += -D__JIG_SELF_MODE__
 
 INCLUDE = -I/usr/local/include
 LDFLAGS = -L/usr/local/lib -lpthread

@@ -2,9 +2,9 @@
 /**
  * @file client.c
  * @author charles-park (charles.park@hardkernel.com)
- * @brief ODROID-C4 JIG Client App.
+ * @brief ODROID-C5 JIG Client App.
  * @version 2.0
- * @date 2024-11-25
+ * @date 2025-02-05
  *
  * @package apt install iperf3, nmap, ethtool, usbutils, alsa-utils
  *
@@ -44,12 +44,11 @@
 // https://docs.google.com/spreadsheets/d/1Of7im-2I5m_M-YKswsubrzQAXEGy-japYeH8h_754WA/edit#gid=0
 //
 //------------------------------------------------------------------------------
-//#define __JIG_SELF_MODE__
-
 #define CLIENT_FB       "/dev/fb0"
 #define CLIENT_UART     "/dev/ttyS0"
 
-#define CLIENT_UI       "ui_c4_client.cfg"
+// #define CLIENT_UI       "ui_client.cfg"
+// #define CLIENT_DEVICE   "dev_client.cfg"
 
 #define UART_BAUDRATE   115200
 
@@ -74,7 +73,9 @@
 #define CHECK_CMD_DELAY     (500*1000)
 #define UPDATE_UI_DELAY     (500*1000)
 
+//------------------------------------------------------------------------------
 // system state
+//------------------------------------------------------------------------------
 enum { eSTATUS_WAIT, eSTATUS_RUN, eSTATUS_PRINT, eSTATUS_STOP, eSTATUS_END };
 
 typedef struct client__t {
@@ -82,6 +83,8 @@ typedef struct client__t {
     fb_info_t   *pfb;
     ui_grp_t    *pui;
 
+    // model name str
+    char        model[STR_NAME_LENGTH];
     // UART communication
     uart_t      *puart;
     char        rx_msg [SERIAL_RESP_SIZE +1];
@@ -98,6 +101,7 @@ volatile int UIStatus = eSTATUS_WAIT;
 pthread_t thread_ui;
 pthread_t thread_check;
 
+//------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 // 문자열 변경 함수. 입력 포인터는 반드시 메모리가 할당되어진 변수여야 함.
@@ -118,14 +122,16 @@ static void toupperstr (char *p)
     for (i = 0; i < c; i++, p++)
         *p = toupper(*p);
 }
+//------------------------------------------------------------------------------
 
+//------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 int print_test_result (client_t *p)
 {
     int check_item;
     int error_cnt, err_line = 0, pos = 0;
     char error_str [NLP_ERR_LINE][NLP_MAX_CHAR];
-    char serial_resp[SERIAL_RESP_SIZE], resp[DEVICE_RESP_SIZE];
+    char serial_resp[SERIAL_RESP_SIZE +1], resp[DEVICE_RESP_SIZE+ 1];
 
     // mac print
     memset  (resp, 0, sizeof(resp));
@@ -178,7 +184,11 @@ static void *thread_ui_func (void *pclient)
     while (1) {
         onoff = !onoff;
         ui_set_ritem (p->pfb, p->pui, UID_ALIVE,
-                    onoff ? COLOR_GREEN : p->pui->bc.uint, -1);
+            onoff ? COLOR_GREEN : p->pui->bc.uint, -1);
+
+        ui_set_sitem (p->pfb, p->pui, UID_ALIVE,
+                    -1, -1, onoff ? p->model : __DATE__);
+
         ui_set_sitem (p->pfb, p->pui, UID_IPADDR, -1, -1, ip_addr);
 
         switch (UIStatus) {
@@ -210,8 +220,10 @@ static void *thread_ui_func (void *pclient)
                 UIStatus = eSTATUS_WAIT;
                 break;
         }
-        if (onoff)  ui_update (p->pfb, p->pui, -1);
-
+        if (onoff) {
+            if (p->pui->p_item.timeout) p->pui->p_item.timeout--;
+            ui_update (p->pfb, p->pui, -1);
+        }
         usleep (UPDATE_UI_DELAY);
     }
     return pclient;
@@ -266,9 +278,9 @@ static int update_ui_data (client_t *p, parse_resp_data_t *pdata)
 
             // 'C' command receive -> 'P' or 'F' command send to server
             {
-                char serial_resp[SERIAL_RESP_SIZE], resp[DEVICE_RESP_SIZE];
+                char serial_resp[SERIAL_RESP_SIZE +1], resp[DEVICE_RESP_SIZE +1];
 
-                DEVICE_RESP_FORM_STR(resp, pdata->status_i ? 'P': 'F', pdata->resp_s);
+                DEVICE_RESP_FORM_STR(resp, (pdata->status_i == 1) ? 'P': 'F', pdata->resp_s);
                 SERIAL_RESP_FORM(serial_resp, 'S', pdata->gid, pdata->did, resp);
 
                 protocol_msg_tx (p->puart, serial_resp);    protocol_msg_tx (p->puart, "\r\n");
@@ -279,7 +291,7 @@ static int update_ui_data (client_t *p, parse_resp_data_t *pdata)
     }
 
     memset (pstr, 0, sizeof(pstr));
-        memcpy (pstr, pdata->resp_s, strlen(pdata->resp_s));
+    memcpy (pstr, pdata->resp_s, strlen(pdata->resp_s));
 
     switch (pdata->gid) {
         case eGID_SYSTEM:
@@ -321,8 +333,8 @@ void client_data_check (client_t *p, int check_item, void *dev_resp)
 #endif
     // if client mode
     {
-        char serial_resp[SERIAL_RESP_SIZE], *resp;
-        SERIAL_RESP_FORM(serial_resp, 'S', gid, did, dev_resp);
+        char serial_resp[SERIAL_RESP_SIZE +1], *resp;
+        SERIAL_RESP_FORM(serial_resp, 'S', gid, did, (char *)dev_resp);
 
         protocol_msg_tx (p->puart, serial_resp);
         protocol_msg_tx (p->puart, "\r\n");
@@ -371,9 +383,21 @@ static void *thread_check_func (void *pclient)
                 if (!p->pui->i_item[check_item].is_info)
                     ui_set_ritem (p->pfb, p->pui, uid, COLOR_YELLOW, -1);
 
+                if (gid == eGID_FW) {
+                        ui_set_popup (p->pfb, p->pui,
+                        p->pfb->w * 80 / 100 , p->pfb->h * 30 / 100, 2,
+                        COLOR_RED, COLOR_BLACK, COLOR_RED,
+                        2, 10, "%s", "USB F/W Check & Upgrade");
+                }
                 p->pui->i_item[check_item].status =
-                            device_check (gid, did, dev_resp);
+                    device_check (gid, did, dev_resp);
 
+                if (gid == eGID_FW) {
+                    if (p->pui->i_item[check_item].status) {
+                        p->pui->p_item.timeout = 1; sleep (1);
+                    }
+                    RunningTime = DEFAULT_RUNING_TIME;
+                }
                 printf ("\n%s : gid = %d, did = %d, complete = %d, status = %d, resp = %s\n",
                                 __func__, gid, did,
                                 p->pui->i_item[check_item].complete,
@@ -386,6 +410,13 @@ static void *thread_check_func (void *pclient)
 #endif
                 client_data_check (p, check_item, dev_resp);
             } else pass_item++;
+
+            // force stop
+            if (!RunningTime) {
+                // check complete
+                RunningTime = 0;    SystemCheckReady = 0;
+                return pclient;
+            }
         }
         // loop delay
         usleep (FUNC_LOOP_DELAY);
@@ -396,11 +427,49 @@ static void *thread_check_func (void *pclient)
 }
 
 //------------------------------------------------------------------------------
+const char *get_model_cmd = "cat /proc/device-tree/model && sync";
+
+static int get_model_name (char *pname)
+{
+    FILE *fp;
+    char *ptr, cmd_line[STR_PATH_LENGTH];
+
+    if (access ("/proc/device-tree/model", F_OK) != 0)
+        return 0;
+
+    memset (cmd_line, 0, sizeof(cmd_line));
+
+    if ((fp = popen(get_model_cmd, "r")) != NULL) {
+        if (NULL != fgets (cmd_line, sizeof(cmd_line), fp)) {
+            if ((ptr = strstr (cmd_line, "ODROID-")) != NULL) {
+                strncpy (pname, ptr, strlen(ptr));
+                pclose(fp);
+                return 1;
+            }
+        }
+        pclose(fp);
+    }
+    return 0;
+}
+
+//------------------------------------------------------------------------------
 static int client_setup (client_t *p)
 {
-    if ((p->pfb = fb_init (CLIENT_FB)) == NULL)         exit(1);
-    if ((p->pui = ui_init (p->pfb, CLIENT_UI)) == NULL) exit(1);
-    // ODROID-C4 (115200 baud)
+    char ui_fname[STR_PATH_LENGTH], dev_fname[STR_PATH_LENGTH];
+
+    memset (ui_fname,   0, sizeof(ui_fname));
+    memset (dev_fname,  0, sizeof(dev_fname));
+
+    if (!get_model_name(p->model))  exit(1);
+
+    tolowerstr (p->model);
+    sprintf (ui_fname,  "%s_ui.cfg",  &p->model[strlen("ODROID-")]);
+    sprintf (dev_fname, "%s_dev.cfg", &p->model[strlen("ODROID-")]);
+    toupperstr (p->model);
+
+    if ((p->pfb = fb_init (CLIENT_FB)) == NULL)        exit(1);
+    if ((p->pui = ui_init (p->pfb, ui_fname)) == NULL) exit(1);
+    // Default Baudrate (115200 baud)
     if ((p->puart = uart_init (CLIENT_UART, UART_BAUDRATE)) != NULL) {
         if (ptc_grp_init (p->puart, 1)) {
             if (!ptc_func_init (p->puart, 0, SERIAL_RESP_SIZE, protocol_check, protocol_catch)) {
@@ -408,6 +477,9 @@ static int client_setup (client_t *p)
                 exit(1);
             }
         }
+        // client device init (lib_dev_check)
+        if (!device_setup (dev_fname))  exit(1);
+
         return 1;
     }
     return 0;
@@ -427,7 +499,7 @@ static void protocol_parse (client_t *p)
             break;
         case 'X':
             // force stop
-            if (!RunningTime)
+            if (RunningTime != 0)
                 RunningTime = 1;
             break;
         case 'E':
@@ -448,7 +520,7 @@ static void protocol_parse (client_t *p)
                     p->pui->i_item[check_item].status = 0;
                     RunningTime += 5;
                 } else {
-                    char serial_resp[SERIAL_RESP_SIZE], dev_resp[DEVICE_RESP_SIZE];
+                    char serial_resp[SERIAL_RESP_SIZE +1], dev_resp[DEVICE_RESP_SIZE +1];
 
                     memset (serial_resp, 0, sizeof(serial_resp));
                     memset (dev_resp, 0, sizeof(dev_resp));
@@ -492,20 +564,12 @@ int main (void)
     pthread_create (&thread_ui,    NULL, thread_ui_func,    (void *)&client);
     pthread_create (&thread_check, NULL, thread_check_func, (void *)&client);
 
-    ui_set_popup (client.pfb, client.pui,
-                    client.pfb->w * 80 / 100 , client.pfb->h * 30 / 100, 2,
-                    COLOR_RED, COLOR_BLACK, COLOR_RED,
-                    2, 1, "%s", "USB F/W Check & Upgrade");
-
-    // client device init (lib_dev_check)
-    device_setup ();
-
     // popup disable
     client.pui->p_item.timeout = 0;
 
     // Send boot msg & Wait for Ready msg
     {
-        char serial_resp[SERIAL_RESP_SIZE];
+        char serial_resp[SERIAL_RESP_SIZE +1];
 
         SystemCheckReady = 0;
         SERIAL_RESP_FORM(serial_resp, 'R', -1, -1, NULL);
