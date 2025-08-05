@@ -45,12 +45,14 @@
 //
 //------------------------------------------------------------------------------
 #define CLIENT_FB       "/dev/fb0"
-#define CLIENT_UART     "/dev/ttyS0"
+// #define CLIENT_UART     "/dev/ttyS0"
+#define CLIENT_UART     "/dev/ttyFIQ0"
 
 // #define CLIENT_UI       "ui_client.cfg"
 // #define CLIENT_DEVICE   "dev_client.cfg"
 
-#define UART_BAUDRATE   115200
+// #define UART_BAUDRATE   115200
+ #define UART_BAUDRATE   1500000
 
 /* NLP Printer Info */
 #define NLP_MAX_CHAR    19
@@ -93,7 +95,8 @@ typedef struct client__t {
 
 
 //------------------------------------------------------------------------------
-#define DEFAULT_RUNING_TIME  30
+//#define DEFAULT_RUNING_TIME  30
+#define DEFAULT_RUNING_TIME  60
 
 volatile int SystemCheckReady = 0, RunningTime = DEFAULT_RUNING_TIME;
 volatile int UIStatus = eSTATUS_WAIT;
@@ -176,10 +179,6 @@ static void *thread_ui_func (void *pclient)
 {
     static int onoff = 0;
     client_t *p = (client_t *)pclient;
-    char ip_addr[20];
-
-    memset (ip_addr,    0, sizeof(ip_addr));
-    sprintf(ip_addr, "%s", get_board_ip());
 
     while (1) {
         onoff = !onoff;
@@ -189,7 +188,7 @@ static void *thread_ui_func (void *pclient)
         ui_set_sitem (p->pfb, p->pui, UID_ALIVE,
                     -1, -1, onoff ? p->model : __DATE__);
 
-        ui_set_sitem (p->pfb, p->pui, UID_IPADDR, -1, -1, ip_addr);
+        ui_set_sitem (p->pfb, p->pui, UID_IPADDR, -1, -1, get_board_ip());
 
         switch (UIStatus) {
             case eSTATUS_WAIT:
@@ -261,17 +260,22 @@ static int update_ui_data (client_t *p, parse_resp_data_t *pdata)
 {
     char pstr[DEVICE_RESP_SIZE];
     int uid = find_item_uid (p, pdata->gid, pdata->did);
+    int is_info = p->pui->i_item[find_item_pos (p, pdata->gid, pdata->did)].is_info;
 
     if (uid == -1)  return 0;
 
     if (pdata->status_c != 'C') {
-        ui_set_ritem (p->pfb, p->pui, uid,
+        if (is_info != INFO_DATA) {
+            ui_set_ritem (p->pfb, p->pui, uid,
                 (pdata->status_i == 1) ? COLOR_GREEN : COLOR_RED, -1);
+        }
     } else {
         /* C command received */
         if (device_resp_check(pdata)) {
-            ui_set_ritem (p->pfb, p->pui, uid,
-                    pdata->status_i ? COLOR_GREEN : COLOR_RED, -1);
+            if (is_info != INFO_DATA) {
+                ui_set_ritem (p->pfb, p->pui, uid,
+                        pdata->status_i ? COLOR_GREEN : COLOR_RED, -1);
+            }
 
             p->pui->i_item[find_item_pos (p, pdata->gid, pdata->did)].status = pdata->status_i;
             p->pui->i_item[find_item_pos (p, pdata->gid, pdata->did)].complete = 1;
@@ -289,6 +293,8 @@ static int update_ui_data (client_t *p, parse_resp_data_t *pdata)
         else
             return 0;
     }
+
+    if (is_info == INFO_STATUS) return 1;
 
     memset (pstr, 0, sizeof(pstr));
     memcpy (pstr, pdata->resp_s, strlen(pdata->resp_s));
@@ -380,7 +386,7 @@ static void *thread_check_func (void *pclient)
             memset (dev_resp, 0, sizeof(dev_resp));
 
             if (!p->pui->i_item[check_item].complete) {
-                if (!p->pui->i_item[check_item].is_info)
+                if (p->pui->i_item[check_item].is_info != INFO_DATA)
                     ui_set_ritem (p->pfb, p->pui, uid, COLOR_YELLOW, -1);
 
                 if (gid == eGID_FW) {
