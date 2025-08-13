@@ -364,7 +364,6 @@ static void *thread_check_func (void *pclient)
 
     while (pass_item != p->pui->i_item_cnt) {
         for (check_item = 0, pass_item = 0; check_item < p->pui->i_item_cnt; check_item++) {
-
             uid = p->pui->i_item[check_item].ui_id;
             gid = p->pui->i_item[check_item].grp_id;
             did = p->pui->i_item[check_item].dev_id;
@@ -415,7 +414,8 @@ static void *thread_check_func (void *pclient)
                     (dev_resp[0] == 'C') ? 0 : p->pui->i_item[check_item].status;
 #endif
                 client_data_check (p, check_item, dev_resp);
-            } else pass_item++;
+
+            }   else pass_item++;
 
             // force stop
             if (!RunningTime) {
