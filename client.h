@@ -63,9 +63,6 @@ enum { eSTATUS_WAIT, eSTATUS_RUN, eSTATUS_PRINT, eSTATUS_STOP, eSTATUS_END };
 
 //------------------------------------------------------------------------------
 typedef struct client__t {
-    // UI Test remain time
-    int         remain_time;
-
     // HDMI UI
     fb_info_t   *pfb;
     ui_grp_t    *pui;
