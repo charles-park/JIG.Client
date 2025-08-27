@@ -41,7 +41,7 @@
 // https://docs.google.com/spreadsheets/d/1Of7im-2I5m_M-YKswsubrzQAXEGy-japYeH8h_754WA/edit#gid=0
 //
 //------------------------------------------------------------------------------
-volatile int SystemCheckReady = 0, RunningTime = DEFAULT_RUNING_TIME;
+volatile int SystemCheckReady = 0, RunningTime = DEFAULT_RUNING_TIME, SelfTestMode = 0;
 volatile int UIStatus = eSTATUS_WAIT;
 
 pthread_t thread_ui;
@@ -247,8 +247,8 @@ void client_data_check (client_t *p, int check_item, void *dev_resp)
     int gid = p->pui->i_item[check_item].grp_id;
     int did = p->pui->i_item[check_item].dev_id;
 
-#if defined(__JIG_SELF_MODE__)
-    // if self(server) mode
+    // option -s
+    if (SelfTestMode)
     {
         parse_resp_data_t pdata;
         if (device_resp_parse( dev_resp, &pdata)) {
@@ -256,7 +256,7 @@ void client_data_check (client_t *p, int check_item, void *dev_resp)
             update_ui_data (p, &pdata);
         }
     }
-#endif
+
     // if client mode
     {
         char serial_resp[SERIAL_RESP_SIZE +1], *resp;
@@ -329,10 +329,11 @@ static void *thread_check_func (void *pclient)
                                 p->pui->i_item[check_item].status,
                                 dev_resp);
 
-#if defined (__JIG_SELF_MODE__)
-                p->pui->i_item[check_item].complete =
-                    (dev_resp[0] == 'C') ? 0 : p->pui->i_item[check_item].status;
-#endif
+                // option -s
+                if (SelfTestMode) {
+                    p->pui->i_item[check_item].complete =
+                        (dev_resp[0] == 'C') ? 0 : p->pui->i_item[check_item].status;
+                }
                 client_data_check (p, check_item, dev_resp);
 
             }   else pass_item++;
@@ -418,12 +419,63 @@ static void protocol_parse (client_t *p)
 }
 
 //------------------------------------------------------------------------------
+static void print_usage (const char *prog)
+{
+    puts("");
+    printf("Usage: %s {options}\n", prog);
+    puts("\n"
+        " -s             : self test mode. default = 0\n"
+        " -t {test time} : board test time\n"
+        " -h             : usage screen\n"
+        "\n"
+    );
+    exit(1);
+}
+
 //------------------------------------------------------------------------------
-int main (void)
+static void parse_opts (int argc, char *argv[])
+{
+    while (1) {
+        static const struct option lopts[] = {
+            { "self test mode"  ,  0, 0, 's' },
+            { "board test time" ,  1, 0, 't' },
+            { "board test time" ,  0, 0, 'h' },
+            { NULL, 0, 0, 0 },
+        };
+        int c;
+
+        c = getopt_long(argc, argv, "st:h", lopts, NULL);
+
+        if (c == -1)
+            break;
+
+        switch (c) {
+        case 's':
+            SelfTestMode = 1;
+            break;
+        case 't':
+            RunningTime = atoi (optarg);
+            if (RunningTime < 0)
+                RunningTime = DEFAULT_RUNING_TIME;
+            break;
+        case 'h':
+        default:
+            print_usage(argv[0]);
+            break;
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+int main (int argc, char *argv[])
 {
     client_t client;
 
     memset (&client, 0, sizeof(client));
+
+    // option check
+    parse_opts(argc, argv);
 
     // UI, UART
     client_setup (&client);
@@ -443,9 +495,8 @@ int main (void)
         protocol_msg_tx (client.puart, serial_resp);    protocol_msg_tx (client.puart, "\r\n");
     }
 
-#if defined (__JIG_SELF_MODE__)
-    SystemCheckReady = 1;
-#endif
+    // option -s
+    if (SelfTestMode)   SystemCheckReady = 1;
 
     while (1) {
         if (protocol_msg_rx (client.puart, client.rx_msg))
