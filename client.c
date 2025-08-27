@@ -33,10 +33,7 @@
 #include <pthread.h>
 
 //------------------------------------------------------------------------------
-#include "lib_fbui/lib_fb.h"
-#include "lib_fbui/lib_ui.h"
-#include "lib_dev_check/lib_dev_check.h"
-#include "protocol.h"
+#include "client.h"
 
 //------------------------------------------------------------------------------
 //
@@ -44,88 +41,11 @@
 // https://docs.google.com/spreadsheets/d/1Of7im-2I5m_M-YKswsubrzQAXEGy-japYeH8h_754WA/edit#gid=0
 //
 //------------------------------------------------------------------------------
-#define CLIENT_FB       "/dev/fb0"
-// #define CLIENT_UART     "/dev/ttyS0"
-#define CLIENT_UART     "/dev/ttyFIQ0"
-
-// #define CLIENT_UI       "ui_client.cfg"
-// #define CLIENT_DEVICE   "dev_client.cfg"
-
-// #define UART_BAUDRATE   115200
- #define UART_BAUDRATE   1500000
-
-/* NLP Printer Info */
-#define NLP_MAX_CHAR    19
-#define NLP_ERR_LINE    20
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-#define UID_ALIVE       0
-#define UID_IPADDR      4
-#define UID_STATUS      47
-
-#define RUN_BOX_ON      RGB_TO_UINT(204, 204, 0)
-#define RUN_BOX_OFF     RGB_TO_UINT(153, 153, 0)
-
-//------------------------------------------------------------------------------
-#define MAIN_LOOP_DELAY     500
-
-#define FUNC_LOOP_DELAY     (100*1000)
-
-#define CHECK_CMD_DELAY     (500*1000)
-#define UPDATE_UI_DELAY     (500*1000)
-
-//------------------------------------------------------------------------------
-// system state
-//------------------------------------------------------------------------------
-enum { eSTATUS_WAIT, eSTATUS_RUN, eSTATUS_PRINT, eSTATUS_STOP, eSTATUS_END };
-
-typedef struct client__t {
-    // HDMI UI
-    fb_info_t   *pfb;
-    ui_grp_t    *pui;
-
-    // model name str
-    char        model[STR_NAME_LENGTH];
-    // UART communication
-    uart_t      *puart;
-    char        rx_msg [SERIAL_RESP_SIZE +1];
-    char        tx_msg [SERIAL_RESP_SIZE +1];
-}   client_t;
-
-
-//------------------------------------------------------------------------------
-//#define DEFAULT_RUNING_TIME  30
-#define DEFAULT_RUNING_TIME  60
-
 volatile int SystemCheckReady = 0, RunningTime = DEFAULT_RUNING_TIME;
 volatile int UIStatus = eSTATUS_WAIT;
 
 pthread_t thread_ui;
 pthread_t thread_check;
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-// 문자열 변경 함수. 입력 포인터는 반드시 메모리가 할당되어진 변수여야 함.
-//------------------------------------------------------------------------------
-static void tolowerstr (char *p)
-{
-    int i, c = strlen(p);
-
-    for (i = 0; i < c; i++, p++)
-        *p = tolower(*p);
-}
-
-//------------------------------------------------------------------------------
-static void toupperstr (char *p)
-{
-    int i, c = strlen(p);
-
-    for (i = 0; i < c; i++, p++)
-        *p = toupper(*p);
-}
-//------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -430,68 +350,6 @@ static void *thread_check_func (void *pclient)
     // check complete
     RunningTime = 0;    SystemCheckReady = 0;
     return pclient;
-}
-
-//------------------------------------------------------------------------------
-const char *get_model_cmd = "cat /proc/device-tree/model && sync";
-
-static int get_model_name (char *pname)
-{
-    FILE *fp;
-    char *ptr, cmd_line[STR_PATH_LENGTH];
-
-    if (access ("/proc/device-tree/model", F_OK) != 0)
-        return 0;
-
-    memset (cmd_line, 0, sizeof(cmd_line));
-
-    if ((fp = popen(get_model_cmd, "r")) != NULL) {
-        if (NULL != fgets (cmd_line, sizeof(cmd_line), fp)) {
-            if ((ptr = strstr (cmd_line, "ODROID-")) != NULL) {
-                strncpy (pname, ptr, strlen(ptr));
-                pclose(fp);
-                return 1;
-            }
-        }
-        pclose(fp);
-    }
-    return 0;
-}
-
-//------------------------------------------------------------------------------
-static int client_setup (client_t *p)
-{
-    char fname [STR_PATH_LENGTH],ui_fname [STR_NAME_LENGTH * 2], dev_fname[STR_NAME_LENGTH * 2];
-
-    memset (fname,     0, sizeof(fname));
-    memset (ui_fname,  0, sizeof(ui_fname));
-    memset (dev_fname, 0, sizeof(dev_fname));
-
-    if (!get_model_name(p->model))  exit(1);
-
-    tolowerstr (p->model);
-    sprintf (ui_fname,  "%s_ui.cfg",  &p->model[strlen("ODROID-")]);
-    sprintf (dev_fname, "%s_dev.cfg", &p->model[strlen("ODROID-")]);
-    toupperstr (p->model);
-
-    if ((p->pfb = fb_init (CLIENT_FB)) == NULL)        exit(1);
-
-    find_file_path (ui_fname, fname);
-    if ((p->pui = ui_init (p->pfb, fname)) == NULL) exit(1);
-    // Default Baudrate (115200 baud)
-    if ((p->puart = uart_init (CLIENT_UART, UART_BAUDRATE)) != NULL) {
-        if (ptc_grp_init (p->puart, 1)) {
-            if (!ptc_func_init (p->puart, 0, SERIAL_RESP_SIZE, protocol_check, protocol_catch)) {
-                printf ("%s : protocol install error.", __func__);
-                exit(1);
-            }
-        }
-        // client device init (lib_dev_check)
-        if (!device_setup (dev_fname))  exit(1);
-
-        return 1;
-    }
-    return 0;
 }
 
 //------------------------------------------------------------------------------
