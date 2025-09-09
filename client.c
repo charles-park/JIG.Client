@@ -267,8 +267,20 @@ void client_data_check (client_t *p, int check_item, void *dev_resp)
 
         // cmd check 'C'
         resp = (char *)dev_resp;
-        if (resp[0] == 'C')
-            usleep (CHECK_CMD_DELAY);
+        if (resp[0] == 'C') {
+//            usleep (CHECK_CMD_DELAY);
+            switch (gid) {
+                case eGID_LED: case eGID_AUDIO:
+                    usleep (CHECK_CMD_DELAY *2);
+                    break;
+                case eGID_ETHERNET:
+                    usleep (CHECK_CMD_DELAY *4);
+                    break;
+                default :
+                    usleep (CHECK_CMD_DELAY);
+                    break;
+            }
+        }
     }
     usleep (FUNC_LOOP_DELAY);
 }
