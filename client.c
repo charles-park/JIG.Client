@@ -268,21 +268,34 @@ void client_data_check (client_t *p, int check_item, void *dev_resp)
         // cmd check 'C'
         resp = (char *)dev_resp;
         if (resp[0] == 'C') {
-//            usleep (CHECK_CMD_DELAY);
+            p->req_ack = 0;     p->req_wait_delay = 0;
+            p->req_gid = gid;   p->req_did = did;
+
             switch (gid) {
-                case eGID_LED: case eGID_AUDIO:
-                    usleep (CHECK_CMD_DELAY *2);
-                    break;
                 case eGID_ETHERNET:
-                    usleep (CHECK_CMD_DELAY *4);
+                    switch (did) {
+                        case eETHERNET_IPERF: case eETHERNET_IPERF_C: case eETHERNET_IPERF_S:
+                            // 50 * FUNC_LOOP_DELAY(100ms) = 5sec
+                            p->req_wait_delay = 50;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case eGID_MISC: case eGID_IR: case eGID_SYSTEM:
                     break;
                 default :
-                    usleep (CHECK_CMD_DELAY);
+                    // 10 * FUNC_LOOP_DELAY(100ms) = 1sec
+                    p->req_wait_delay = 10;
                     break;
             }
         }
     }
-    usleep (FUNC_LOOP_DELAY);
+    do {
+        usleep (FUNC_LOOP_DELAY);
+        if (p->req_wait_delay)  p->req_wait_delay--;
+    }
+    while (p->req_wait_delay && !p->req_ack);
 }
 
 //------------------------------------------------------------------------------
@@ -421,6 +434,10 @@ static void protocol_parse (client_t *p)
                     p->pui->i_item[check_item].complete = 1;
                     printf ("%s : gid = %d, did = %d, ack received.\n",
                             __func__, pitem.gid, pitem.did);
+                }
+                if (pitem.cmd == 'A') {
+                    if ((pitem.gid == p->req_gid) && (pitem.did == p->req_did))
+                        p->req_ack = 1; // pass
                 }
             }
             break;

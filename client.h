@@ -78,6 +78,12 @@ typedef struct client__t {
     uart_t      *puart;
     char        rx_msg [SERIAL_RESP_SIZE +1];
     char        tx_msg [SERIAL_RESP_SIZE +1];
+
+    // Request item info (wait for ack)
+    int         req_gid;    /* request group id */
+    int         req_did;    /* request device id */
+    int         req_ack;    /* 0 = ack not yet, 1 = ack ok */
+    int         req_wait_delay; /* limite wait delay */
 }   client_t;
 
 //------------------------------------------------------------------------------
