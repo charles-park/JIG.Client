@@ -267,35 +267,29 @@ void client_data_check (client_t *p, int check_item, void *dev_resp)
 
         // cmd check 'C'
         resp = (char *)dev_resp;
+
+        /*
+            모든 Check command의 대기시간은 5초.
+            5초 동안 응답이 없는 경우 다음으로 진행함.
+        */
         if (resp[0] == 'C') {
             p->req_ack = 0;     p->req_wait_delay = 0;
             p->req_gid = gid;   p->req_did = did;
-
             switch (gid) {
-                case eGID_ETHERNET:
-                    switch (did) {
-                        case eETHERNET_IPERF: case eETHERNET_IPERF_C: case eETHERNET_IPERF_S:
-                            // 50 * FUNC_LOOP_DELAY(100ms) = 5sec
-                            p->req_wait_delay = 50;
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
                 case eGID_MISC: case eGID_IR: case eGID_SYSTEM:
                     break;
                 default :
-                    // 10 * FUNC_LOOP_DELAY(100ms) = 1sec
-                    p->req_wait_delay = 10;
+                    // 50 * FUNC_LOOP_DELAY(100ms) = 5 sec
+                    p->req_wait_delay = 50;
                     break;
             }
+
+            do {
+                usleep (FUNC_LOOP_DELAY);
+                if (p->req_wait_delay)  p->req_wait_delay--;
+            }   while (p->req_wait_delay && !p->req_ack);
         }
     }
-    do {
-        usleep (FUNC_LOOP_DELAY);
-        if (p->req_wait_delay)  p->req_wait_delay--;
-    }
-    while (p->req_wait_delay && !p->req_ack);
 }
 
 //------------------------------------------------------------------------------
