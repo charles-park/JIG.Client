@@ -1,16 +1,26 @@
 # ODROID-C5 (2025-01-06)
 
-* Document : [https://docs.google.com/spreadsheets/d/1igBObU7CnP6FRaRt-x46l5R77-8uAKEskkhthnFwtpY/edit?gid=719914769#gid=719914769](https://docs.google.com/spreadsheets/d/1DmyNXs4d5W-9Q2ZlV6k4eF86kqg6jsr3/edit?gid=346818897#gid=346818897)
-* Image PATH     : smb://odroidh3.local/sharedfolder/생산관리/jig/odroid_c5_c4/2025.06.19_NewImage/ (odroidh server)
-* Linux OS Image : ubuntu-22.04-factory-odroidc5-odroidc5-20250619.img.xz
-* Release Image  : jig-c4-c5.client-c5.Jun_20_2025.emmc.img
-
-### ODROID-C5 (2025-06-19) Update : Bootloader DDR Clock Error Fix (1968Mhz -> 1896Mhz)
+* Document : [ODROID-C5 - ADC Board 연결도(2025)](https://docs.google.com/spreadsheets/d/1DmyNXs4d5W-9Q2ZlV6k4eF86kqg6jsr3/edit?gid=346818897#gid=346818897)
+* Image PATH     : smb://odroidh3.local/sharedfolder/생산관리/jig/odroid_c5_c4/2025.06.19_NewImage/
 * Linux OS Image : ubuntu-22.04-factory-odroidc5-odroidc5-20250619.img.xz
 ```
 root@server:~# uname -a
 Linux server 5.15.153-odroid-arm64 #1 SMP PREEMPT Wed, 18 Jun 2025 08:31:13 +0000 aarch64 aarch64 aarch64 GNU/Linux
 ```
+* Release Image  : jig-c4-c5.client-c5.Jun_20_2025.emmc.img
+
+### ⚠️ **Note : `The DDR clock must be verified as 1896Mhz in the bootloader`**
+
+### Test items
+- [x] HDMI : FB, EDID, HPD
+- [x] STORAGE : eMMC
+- [x] USB : USB2.0 x 4, OTG
+- [x] ETHERNET : IPREF(Server), MAC
+- [x] ADC : Header 37,40
+- [x] LED : Power, Alive, Ethernet(Green/Orange)
+- [x] HEADER : H40, H7
+- [x] IR : IR Receive
+- [x] F/W : USB Hub F/W Write
 
 ### Disable Console (serial ttyS0), hdmi 1920x1080, gpio overlay disable
 ```
