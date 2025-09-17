@@ -1,58 +1,51 @@
-# JIG.Client
+# JIG.Client setting (All settings must be done with root privileges.)
 
-2024 New version JIG-Client (JIG Client Base version)
-2025 New version JIG-Client (branch client.v20)
-
-* Document : https://docs.google.com/spreadsheets/d/1igBObU7CnP6FRaRt-x46l5R77-8uAKEskkhthnFwtpY/edit?gid=719914769#gid=719914769
-
-
-### ODROID-C5 (2025-01-06)
-* Linux OS Image : factory-odroidc5-0307.img (odroidh server)
-* jig-c5.base.0307.img (auto login, all ubuntu package installed, lirc installed, python3 module installed, git default setting)
-* jig-c5.client-c4.img, jig-c5.client-c5.img (2025.03.13 first release)
+### Required packages
+  * Common packages
 ```
-root@server:~# uname -a
-Linux server 5.15.153-odroid-arm64 #101 SMP PREEMPT Fri Mar 7 11:28:21 KST 2025 aarch64 aarch64 aarch64 GNU/Linux
-```
-
-### ODROID-C5 (2025-06-19) Update : Bootloader DDR Clock Error Fix (1968Mhz -> 1896Mhz)
-* Linux OS Image : ubuntu-22.04-factory-odroidc5-odroidc5-20250619.img.xz
-```
-root@server:~# uname -a
-Linux server 5.15.153-odroid-arm64 #1 SMP PREEMPT Wed, 18 Jun 2025 08:31:13 +0000 aarch64 aarch64 aarch64 GNU/Linux
+apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap evtest htop cups cups-bsd iperf3 alsa samba lirc evtest minicom
 ```
   
-### Install package
+  * Ubuntu version (>= 24.xx) : python3 package install
 ```
-// ubuntu package install
-root@server:~# apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap evtest htop cups cups-bsd iperf3 alsa samba lirc evtest
-
-// ubuntu 24.01 version python3 package install
-root@server:~# apt install python3-aiohttp python3-async-timeout
-
-// system reboot
-root@server:~# reboot
-
-
+apt install python3-aiohttp python3-async-timeout
 ```
 
-### Github setting
+  * Ubuntu version ( < 24.xx) : python3 package install
 ```
-root@server:~# git config --global user.email "charles.park@hardkernel.com"
-root@server:~# git config --global user.name "charles-park"
+pip install aiohttp asyncio
 ```
 
-### Clone the reopsitory with submodule (update 2025.06.19 : branch merge client.v20 -> main)
+### List of configurable boards (Detailed settings)
+  * [ODROID-C5 (2025.06)](docs/client.c5.md) : JIG_C4_C5 (VU12, Server.C5)
+  * [ODROID-C4 (2025.06)](docs/client.c4.md) : JIG_C4_C5 (VU12, Server.C5)
+  * [ODROID-M1 (2025.09)](docs/client.m1.md) : JIG_M1 (VU12, Server.C5)
+
+### SSH root login
 ```
-root@server:~# git clone -b client.v20 --recursive https://github.com/charles-park/JIG.Client (old)
-root@server:~# git clone --recursive https://github.com/charles-park/JIG.Client (update 2025.06.19)
+root@server:~# passwd root
+New password: 
+Retype new password: 
+passwd: password updated successfully
 
-or
 
-root@server:~# git clone -b client.v20 https://github.com/charles-park/JIG.Client (old)
-root@server:~# git clone https://github.com/charles-park/JIG.Client (old)
-root@server:~# cd JIG.Client
-root@server:~/JIG.Client# git submodule update --init --recursive
+root@server:~# vi /etc/ssh/sshd_config
+...
+#LoginGraceTime 2m
+
+PermitRootLogin yes
+StrictModes yes
+
+#MaxAuthTries 6
+#MaxSessions 10
+
+PubkeyAuthentication yes
+
+# Expect .ssh/authorized_keys2 to be disregarded by default in future.
+#AuthorizedKeysFile     .ssh/authorized_keys .ssh/authorized_keys2
+...
+
+root@server:~# service sshd restart
 ```
 
 ### Auto login
@@ -67,69 +60,6 @@ Type=idle
 ```
 * edit tool save
   save exit [Ctrl+ k, Ctrl + q]
-
-### Disable Console (serial ttyS0), hdmi 1920x1080, gpio overlay disable
-```
-root@server:~# vi /boot/boot.ini
-...
-# setenv condev "console=ttyS0,115200n8"   # on both (old)
-...
-
-root@server:~# vi /boot/config.ini
-# default_console=ttyS0,921600
-default_console=ttyS0,19200
-overlay_resize=16384
-overlay_profile=""
-
-# overlays="spi0 i2c0 i2c1"
-
-# Activate in Server Mode
-# overlays="i2c0 i2c1"
-
-# Activate in Server Mode
-overlays="ir"
-
-gfx-heap-size=180
-
-# Framebuffer resolution must be 1920x1080(Jig C4 Vu7 LCD) or 1920x7201920x720(Jig-C5 Vu12 LCD) on ServerMode. 
-# outputmode="1080p60hz"
-
-; overlays=""
-...
-```
-
-### Sound setup (TDM-C-T9015-audio-hifi-alsaPORT-i2s)
-```
-// Codec info
-root@server:~# aplay -l
-**** List of PLAYBACK Hardware Devices ****
-card 0: AMLAUGESOUND [AML-AUGESOUND], device 0: TDM-B-dummy-alsaPORT-i2s2hdmi soc:dummy-0 []
-  Subdevices: 1/1
-  Subdevice #0: subdevice #0
-card 0: AMLAUGESOUND [AML-AUGESOUND], device 1: SPDIF-B-dummy-alsaPORT-spdifb soc:dummy-1 []
-  Subdevices: 1/1
-  Subdevice #0: subdevice #0
-card 0: AMLAUGESOUND [AML-AUGESOUND], device 2: TDM-C-T9015-audio-hifi-alsaPORT-i2s fe01a000.t9015-2 []
-  Subdevices: 1/1
-  Subdevice #0: subdevice #0
-card 0: AMLAUGESOUND [AML-AUGESOUND], device 3: SPDIF-dummy-alsaPORT-spdif soc:dummy-3 []
-  Subdevices: 1/1
-  Subdevice #0: subdevice #0
-
-// config mixer (mute off)
-root@server:~# amixer sset 'TDMOUT_C Mute' off
-```
-
-* Sound test (Sign-wave 1Khz)
-```
-// use speaker-test
-root@server:~# speaker-test -D hw:0,2 -c 2 -t sine -f 1000           # pin header target, all
-root@server:~# speaker-test -D hw:0,2 -c 2 -t sine -f 1000 -p 1 -s 1 # pin header target, left
-root@server:~# speaker-test -D hw:0,2 -c 2 -t sine -f 1000 -p 1 -s 2 # pin header target, right
-
-// or use aplay with (1Khz audio file)
-root@server:~# aplay -Dhw:0,2 {audio file} -d {play time}
-```
 
 ### Disable screen off
 ```
@@ -201,6 +131,11 @@ Entry Point:  00000000
 root@server:~# vi /etc/overlayroot.conf
 ...
 overlayroot_cfgdisk="disabled"
+
+# root partition only overlay fs
+# overlayroot="tmpfs:recurse=0"
+
+# All partition overlay fs
 overlayroot="tmpfs"
 ```
 * overlayroot disable
