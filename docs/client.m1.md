@@ -25,7 +25,7 @@ Linux server 5.10.198-odroid-arm64 #104 SMP Mon Sep 8 12:58:44 KST 2025 aarch64 
   MISC     : SPI Button, HP Detect
 ```
 
-## Pettiboot skip
+## Petiboot skip
 ```
 root@server:~# vi /boot/petitboot.cfg
 [petitboot]
