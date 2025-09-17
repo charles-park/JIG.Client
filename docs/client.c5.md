@@ -9,7 +9,7 @@ Linux server 5.15.153-odroid-arm64 #1 SMP PREEMPT Wed, 18 Jun 2025 08:31:13 +000
 ```
 * Release Image  : jig-c4-c5.client-c5.Jun_20_2025.emmc.img
 
-### ⚠️ **Note : `The DDR clock must be verified as 1896Mhz in the bootloader`**
+## ⚠️ **Note : `The DDR clock must be verified as 1896Mhz in the bootloader`**
 
 ### Test items
 - [x] HDMI : FB, EDID, HPD
