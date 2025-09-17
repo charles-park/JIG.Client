@@ -12,15 +12,14 @@ Linux server 5.15.153-odroid-arm64 #1 SMP PREEMPT Wed, 18 Jun 2025 08:31:13 +000
 #### ⚠️ **Note : `The DDR clock must be verified as 1896Mhz in the bootloader`**
 
 ## Test items
-- [x] HDMI : FB, EDID, HPD
-- [x] STORAGE : eMMC
-- [x] USB : USB2.0 x 4, OTG
-- [x] ETHERNET : IPERF(Server), MAC
-- [x] ADC : Header 37,40
-- [x] LED : Power, Alive, Ethernet(Green/Orange)
-- [x] HEADER : H40, H7
-- [x] IR : IR Receive
-- [x] F/W : USB Hub F/W Write
+- HDMI     : FB, EDID, HPD
+- STORAGE  : eMMC
+- USB      : USB2.0 x 4, OTG
+- ETHERNET : IPERF(Server), MAC
+- HEADER   : H40
+- ADC      : Header40 - 37Pin, 40Pin
+- LED      : Power, Alive, Ethernet(Green/Orange)
+- IR       : IR Receive
 
 ## Disable Console (serial ttyS0), hdmi 1920x1080, gpio overlay disable
 ```
