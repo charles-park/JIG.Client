@@ -1,7 +1,7 @@
 # JIG.Client setting
-## ⚠️ **Note : `All settings must be performed as root.`**
+#### ⚠️ **Note : `All settings must be performed as root.`**
 
-### Required packages
+## Required packages
   * Common packages
 ```
 apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap evtest htop cups cups-bsd iperf3 alsa samba lirc evtest minicom
@@ -17,7 +17,7 @@ apt install python3-aiohttp python3-async-timeout
 pip install aiohttp asyncio
 ```
 
-### List of configurable boards (Detailed settings)
+## List of configurable boards (Detailed settings)
   * [ODROID-C5 (2025.06)](docs/client.c5.md) : JIG_C4_C5 (VU12, Server.C5)
   * [ODROID-C4 (2025.06)](docs/client.c4.md) : JIG_C4_C5 (VU12, Server.C5)
   * [ODROID-M1 (2025.09)](docs/client.m1.md) : JIG_M1 (VU12, Server.C5)
