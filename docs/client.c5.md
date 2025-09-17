@@ -15,7 +15,7 @@ Linux server 5.15.153-odroid-arm64 #1 SMP PREEMPT Wed, 18 Jun 2025 08:31:13 +000
 - [x] HDMI : FB, EDID, HPD
 - [x] STORAGE : eMMC
 - [x] USB : USB2.0 x 4, OTG
-- [x] ETHERNET : IPREF(Server), MAC
+- [x] ETHERNET : IPERF(Server), MAC
 - [x] ADC : Header 37,40
 - [x] LED : Power, Alive, Ethernet(Green/Orange)
 - [x] HEADER : H40, H7
