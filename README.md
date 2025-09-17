@@ -71,7 +71,7 @@ echo 0 > /sys/class/graphics/fb0/blank
 ...
 ```
 
-### server static ip settings (For Debugging)
+### Static ip settings (For Debugging)
 ```
 root@server:~# vi /etc/netplan/01-netcfg.yaml
 ```
@@ -95,7 +95,7 @@ root@server:~# netplan apply
 root@server:~# ifconfig
 ```
 
-### server samba config
+### Samba config
 ```
 root@server:~# smbpasswd -a root
 root@server:~# vi /etc/samba/smb.conf
