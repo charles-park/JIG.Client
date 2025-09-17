@@ -2,6 +2,11 @@
 #### ⚠️ **Note : `All settings must be performed as root.`**
 
 ## Required packages
+  * System upgrade
+```
+apt update && apt upgrade -y
+apt update --fix-missing
+```
   * Common packages
 ```
 apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap evtest htop cups cups-bsd iperf3 alsa samba lirc evtest minicom
@@ -15,6 +20,25 @@ apt install python3-aiohttp python3-async-timeout
   * Ubuntu version ( < 24.xx) : python3 package install
 ```
 pip install aiohttp asyncio
+```
+
+## Clone the reopsitory with submodule
+```
+root@odroid:~# git clone --recursive https://github.com/charles-park/JIG.m2.self
+
+or
+
+root@odroid:~# git clone https://github.com/charles-park/JIG.Client
+root@odroid:~# cd JIG.Client
+root@odroid:~/JIG.Client# git submodule update --init --recursive
+
+// app build
+root@odroid:~/JIG.Client# make clean && make
+
+// app install
+root@odroid:~/JIG.Client# cd service
+root@odroid:~/JIG.Client/service# ./install.sh
+
 ```
 
 ## List of configurable boards (Detailed settings)
