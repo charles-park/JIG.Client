@@ -1,4 +1,5 @@
-# JIG.Client setting (All settings must be done with root privileges.)
+# JIG.Client setting
+## ⚠️ **Note : `All settings must be performed as root.`**
 
 ### Required packages
   * Common packages
