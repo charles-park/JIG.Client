@@ -25,6 +25,13 @@ Linux server 5.10.198-odroid-arm64 #104 SMP Mon Sep 8 12:58:44 KST 2025 aarch64 
   MISC     : SPI Button, HP Detect
 ```
 
+## Pettiboot skip
+```
+root@server:~# vi /boot/petitboot.cfg
+[petitboot]
+petitboot,timeout=0
+```
+
 ## Disable Console (serial ttyS0), hdmi 1920x1080, gpio overlay disable
 ```
 root@server:~# vi /boot/boot.ini
