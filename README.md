@@ -1,9 +1,10 @@
 # JIG.Client setting
 #### ⚠️ **Note : `All settings must be performed as root.`**
 ## List of configurable boards (Detailed settings)
-  * [ODROID-C5 (2025.06)](docs/client.c5.md) : JIG_C4_C5 (VU12, Server.C5)
-  * [ODROID-C4 (2025.06)](docs/client.c4.md) : JIG_C4_C5 (VU12, Server.C5)
-  * [ODROID-M1 (2025.09)](docs/client.m1.md) : JIG_M1 (VU12, Server.C5)
+| MODEL | DATE | SERVER BOARD | SERVER-LCD |   | CLIENT BOARD | CLIENT-LCD | 
+|:-----:|:----:|:------------:|:----------:|:-:|:------------:|:----------:|
+| JIG_C4_C5 | 2025.01 | ODROID-C5 | VU12 (1920x720) | | [ODROID-C4 (2025.06)](docs/client.c4.md), [ODROID-C5 (2025.06)](docs/client.c5.md) | VU5 (800x480) |
+| JIG_M1    | 2025.07 | ODROID-C5 | VU12 (1920x720) | | [ODROID-M1 (2025.09)](docs/client.m1.md) | VU5 (800x480) |
 
 ## Reference Documents
 * [Protocol](https://docs.google.com/spreadsheets/d/1F-HGwMx3569bgrLBSw_cTt5DpECXvL3MvAWMEkRWaL4/edit?gid=0#gid=0)
