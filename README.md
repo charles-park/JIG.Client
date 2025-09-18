@@ -1,10 +1,9 @@
 # JIG.Client setting
+#### ⚠️ **Note : `All settings must be performed as root.`**
 ## Reference Documents
 * [Protocol](https://docs.google.com/spreadsheets/d/1F-HGwMx3569bgrLBSw_cTt5DpECXvL3MvAWMEkRWaL4/edit?gid=0#gid=0)
 * [GPIO Map](https://docs.google.com/spreadsheets/d/18cRWfgj9xmlr1JQb91fNN7SQxrBZxkHoxOEJN6Yy4SI/edit?gid=0#gid=0)
 * [MAC Address info](https://docs.google.com/spreadsheets/d/1vIC5tHQ0rEVEjXHcP8fZPeVYMpLD3hWRf8UIYwtjrpw/edit?gid=0#gid=0)
-  
-#### ⚠️ **Note : `All settings must be performed as root.`**
 
 ## Required packages
   * System upgrade
