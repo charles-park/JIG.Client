@@ -3,12 +3,12 @@
 * Document : [ODROID-M1 - ADC Board 연결도(2024)](https://docs.google.com/spreadsheets/d/1mUUWAhZeI7kd9SqFgP_7Fea8CZK7xyCqQDq9VtFoWFI/edit?gid=0#gid=0)
 * Board config   : m1_dev.cfg, m1_ui.cfg
 * Image PATH     : smb://odroidh3.local/sharedfolder/생산관리/jig/odroid-m1/2025.09.16_M1_JIG/
+* Release Image  : m1_jig_client.Sep_15_2025.m1_emmc.img.xz
 * Linux OS Image : bob_odroid_m1.server.base_image.250908.xz
 ```
 root@server:~# uname -a
 Linux server 5.10.198-odroid-arm64 #104 SMP Mon Sep 8 12:58:44 KST 2025 aarch64 aarch64 aarch64 GNU/Linux
 ```
-* Release Image  : m1_jig_client.Sep_15_2025.m1_emmc.img.xz
 
 #### ⚠️ **Note : `A Linux server image with efuse, Ethernet RX/TX delay, and console disabled must be used.`**
 
