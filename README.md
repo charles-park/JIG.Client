@@ -34,7 +34,7 @@ pip install aiohttp asyncio
 
 ## Clone the reopsitory with submodule
 ```
-root@odroid:~# git clone --recursive https://github.com/charles-park/JIG.m2.self
+root@odroid:~# git clone --recursive https://github.com/charles-park/JIG.Client
 
 or
 
