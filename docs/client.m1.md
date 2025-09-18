@@ -1,4 +1,4 @@
-# ODROID-M1 (2025-09-16)
+# Client ODROID-M1 (2025-09-16)
 
 * Document : [ODROID-M1 - ADC Board 연결도(2024)](https://docs.google.com/spreadsheets/d/1mUUWAhZeI7kd9SqFgP_7Fea8CZK7xyCqQDq9VtFoWFI/edit?gid=0#gid=0)
 * Config   : [DEV Config](/configs/m1_dev.cfg), [UI Config](/configs/m1_ui.cfg)
