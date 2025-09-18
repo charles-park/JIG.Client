@@ -1,5 +1,10 @@
 # JIG.Client setting
 #### ⚠️ **Note : `All settings must be performed as root.`**
+## List of configurable boards (Detailed settings)
+  * [ODROID-C5 (2025.06)](docs/client.c5.md) : JIG_C4_C5 (VU12, Server.C5)
+  * [ODROID-C4 (2025.06)](docs/client.c4.md) : JIG_C4_C5 (VU12, Server.C5)
+  * [ODROID-M1 (2025.09)](docs/client.m1.md) : JIG_M1 (VU12, Server.C5)
+
 ## Reference Documents
 * [Protocol](https://docs.google.com/spreadsheets/d/1F-HGwMx3569bgrLBSw_cTt5DpECXvL3MvAWMEkRWaL4/edit?gid=0#gid=0)
 * [GPIO Map](https://docs.google.com/spreadsheets/d/18cRWfgj9xmlr1JQb91fNN7SQxrBZxkHoxOEJN6Yy4SI/edit?gid=0#gid=0)
@@ -44,11 +49,6 @@ root@odroid:~/JIG.Client# cd service
 root@odroid:~/JIG.Client/service# ./install.sh
 
 ```
-
-## List of configurable boards (Detailed settings)
-  * [ODROID-C5 (2025.06)](docs/client.c5.md) : JIG_C4_C5 (VU12, Server.C5)
-  * [ODROID-C4 (2025.06)](docs/client.c4.md) : JIG_C4_C5 (VU12, Server.C5)
-  * [ODROID-M1 (2025.09)](docs/client.m1.md) : JIG_M1 (VU12, Server.C5)
 
 ### SSH root login
 ```
