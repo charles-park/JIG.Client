@@ -1,4 +1,4 @@
-# Client ODROID-C4 (2025-01-06)
+# Client : ODROID-C4 (2025-01-06)
 
 * Document : [ODROID-C4 - ADC Board 연결도(2024)](https://docs.google.com/spreadsheets/d/1igBObU7CnP6FRaRt-x46l5R77-8uAKEskkhthnFwtpY/edit?gid=0#gid=0)
 * Config   : [DEV Config](/configs/c4_dev.cfg), [UI Config](/configs/c4_ui.cfg)
