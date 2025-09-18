@@ -1,6 +1,7 @@
 # ODROID-C4 (2025-01-06)
 
 * Document : [ODROID-C4 - ADC Board 연결도(2024)](https://docs.google.com/spreadsheets/d/1igBObU7CnP6FRaRt-x46l5R77-8uAKEskkhthnFwtpY/edit?gid=0#gid=0)
+* Config   : [DEV Config](/configs/c4_dev.cfg), [UI Config](/configs/c4_ui.cfg)
 * Image PATH     : smb://odroidh3.local/sharedfolder/생산관리/jig/ODROID-C4.new/
 * Linux OS Image : ubuntu-24.01-server-c4-20241206-all_update.img
 * Release Image  : jig-c4.client-c4.Mar_14_2025.img
