@@ -1,4 +1,4 @@
-# ODROID-C5 (2025-01-06)
+# Client ODROID-C5 (2025-01-06)
 
 * Document : [ODROID-C5 - ADC Board 연결도(2025)](https://docs.google.com/spreadsheets/d/1DmyNXs4d5W-9Q2ZlV6k4eF86kqg6jsr3/edit?gid=346818897#gid=346818897)
 * Config   : [DEV Config](/configs/c5_dev.cfg), [UI Config](/configs/c5_ui.cfg)
