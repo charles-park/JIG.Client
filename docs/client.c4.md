@@ -20,7 +20,7 @@
 ## IR Settung
  * [LIRC Setup](https://wiki.odroid.com/odroid-c4/application_note/lirc/lirc_ubuntu18.04)
 
-## Disable Console (serial ttyS0), hdmi 1920x1080, gpio overlay disable
+## Disable Console (serial ttyS0), hdmi 800x480, gpio overlay disable
 ```
 root@server:~# vi /boot/boot.ini
 ...
