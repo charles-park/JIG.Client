@@ -1,4 +1,4 @@
-# JIG.Client setting
+# JIG.Client
 #### ⚠️ **Note : `All settings must be performed as root.`**
 ## List of configurable boards (Detailed settings)
 | MODEL | DATE | SERVER BOARD | SERVER-LCD |   | CLIENT BOARD | CLIENT-LCD | 
