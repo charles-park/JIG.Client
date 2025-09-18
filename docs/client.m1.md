@@ -33,7 +33,7 @@ root@server:~# vi /boot/petitboot.cfg
 petitboot,timeout=0
 ```
 
-## Disable Console (serial ttyS0), hdmi 1920x1080, gpio overlay disable
+## Disable Console (serial ttyS2), hdmi 800x480, gpio overlay disable
 ```
 root@server:~# vi /boot/boot.ini
 [generic]
