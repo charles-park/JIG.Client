@@ -32,6 +32,53 @@ $(TARGET): $(OBJS)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+TARGET_EXISTS := $(wildcard $(TARGET))
+
+# Server MODEL config
+SERVICE_DIRS = ./service
+SERVICE_NAME = odroid-jig.service
+SYSTEMD_DIRS = /etc/systemd/system
+
+install :
+ifndef TARGET_EXISTS
+	@echo "*********************************************"
+	@echo ""
+	@echo "Executable file '$(TARGET)' not found!"
+	@echo "Run 'make' first"
+	@echo ""
+	@echo "*********************************************"
+
+else
+
+	@echo ""
+	install -m 755 $(SERVICE_DIRS)/$(SERVICE_NAME) $(SYSTEMD_DIRS)/$(SERVICE_NAME) && sync;
+	@echo ""
+
+	@if systemctl is-active --quiet $(SERVICE_NAME); then \
+		echo "Reloading $(SERVICE_NAME)..."; \
+		echo "" \
+		systemctl restart $(SERVICE_NAME) && sync; \
+	else \
+		echo "$(SERVICE_NAME) not running. Enable it with:"; \
+		echo "  sudo systemctl enable $(SERVICE_NAME)"; \
+		echo "" \
+		systemctl enable $(SERVICE_NAME) && sync; \
+		systemctl restart $(SERVICE_NAME) && sync; \
+	fi
+
+	@echo ""
+
+endif
+
+uninstall :
+	@if systemctl is-active --quiet $(SERVICE_NAME); then \
+		echo "disable $(SERVICE_NAME)..."; \
+		systemctl stop $(SERVICE_NAME) && sync; \
+		systemctl disable $(SERVICE_NAME) && sync; \
+		$(RM) $(SYSTEMD_DIRS)/$(SERVICE_NAME) && sync; \
+	fi
+#	$(MAKE) clean
+
 clean :
-	rm -f $(OBJS)
-	rm -f $(TARGET)
+	$(RM) $(OBJS)
+	$(RM) $(TARGET)
