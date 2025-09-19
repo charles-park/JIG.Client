@@ -45,10 +45,10 @@ root@odroid:~/JIG.Client# git submodule update --init --recursive
 // app build
 root@odroid:~/JIG.Client# make clean && make
 
-// app install (service start)
+// odroid-jig.service install
 root@odroid:~/JIG.Client# make install
 
-// app uninstall (service remove)
+// odroid-jig.service remove
 root@odroid:~/JIG.Client# make uninstall
 
 ```
