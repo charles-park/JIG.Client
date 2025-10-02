@@ -32,6 +32,10 @@ apt install python3-aiohttp python3-async-timeout
 pip install aiohttp asyncio
 ```
 
+## Github setting
+root@odroid:~# git config --global user.email "charles.park@hardkernel.com"
+root@odroid:~# git config --global user.name "charles-park"
+
 ## Clone the reopsitory with submodule
 ```
 root@odroid:~# git clone --recursive https://github.com/charles-park/JIG.Client
