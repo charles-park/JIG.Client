@@ -33,8 +33,10 @@ pip install aiohttp asyncio
 ```
 
 ## Github setting
+```
 root@odroid:~# git config --global user.email "charles.park@hardkernel.com"
 root@odroid:~# git config --global user.name "charles-park"
+```
 
 ## Clone the reopsitory with submodule
 ```
