@@ -276,6 +276,7 @@ void client_data_check (client_t *p, int check_item, void *dev_resp)
             p->req_ack = 0;     p->req_wait_delay = 0;
             p->req_gid = gid;   p->req_did = did;
             switch (gid) {
+                case eGID_USB:  // usb thread(이동식디스크 인식하지 못한경우)
                 case eGID_MISC: case eGID_IR: case eGID_SYSTEM:
                     break;
                 default :
