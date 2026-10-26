@@ -2,12 +2,14 @@
 # JIG CLIENT APP
 #
 CC      = gcc
-CFLAGS  = -W -Wall -g
+CFLAGS  = -W -Wall -g -fPIC -Iinclude $(shell pkg-config --cflags libcurl)
 CFLAGS  += -D__CLIENT_APP__
 # CFLAGS  += -D__IPERF3_ODROID__
 
 INCLUDE = -I/usr/local/include
 LDFLAGS = -L/usr/local/lib -lpthread
+LDLIBS += $(shell pkg-config --libs libcurl)
+
 #
 # 기본적으로 Makefile은 indentation가 TAB 4로 설정되어있음.
 # Indentation이 space인 경우 아래 내용이 활성화 되어야 함.
