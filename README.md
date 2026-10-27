@@ -3,6 +3,7 @@
 ## List of configurable boards (Detailed settings)
 | MODEL | DATE | SERVER BOARD | SERVER-LCD |   | CLIENT BOARD | CLIENT-LCD | 
 |:-----:|:----:|:------------:|:----------:|:-:|:------------:|:----------:|
+| JIG_R1    | 2026.10 | ODROID-C5 | VU7  (1920x720) | | [ODROID-R1 (2025.09)](docs/client.r1.md) | HDMI (1920x1080) |
 | JIG_M1    | 2025.07 | ODROID-C5 | VU12 (1920x720) | | [ODROID-M1 (2025.09)](docs/client.m1.md) | VU5 (800x480) |
 | JIG_C4_C5 | 2025.01 | ODROID-C5 | VU12 (1920x720) | | [ODROID-C4 (2025.06)](docs/client.c4.md), [ODROID-C5 (2025.06)](docs/client.c5.md) | VU5 (800x480) |
 
@@ -19,7 +20,8 @@ apt update --fix-missing
 ```
   * Common packages
 ```
-apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap evtest htop cups cups-bsd iperf3 alsa samba lirc evtest minicom
+apt install build-essential vim ssh git python3 python3-pip ethtool net-tools usbutils i2c-tools overlayroot nmap evtest htop cups cups-bsd iperf3 alsa samba lirc evtest minicom pkg-config libcurl4-openssl-dev
+
 ```
   
   * Ubuntu version (>= 24.xx) : python3 package install
