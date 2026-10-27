@@ -4,7 +4,7 @@
 * Config   : [DEV Config](/configs/r1_dev.cfg), [UI Config](/configs/r1_ui.cfg)
 * Image PATH     : smb://odroidh3.local/sharedfolder/생산관리/jig/odroid-r1/
 * Release Image  : jig_r1_client_20261027.img
-* Linux OS Image : bob_odroid_m1.client.base_image.250908.xz
+* Linux OS Image : ubuntu-26.04-server-odroidr1-20260818.img.xz
 ```
 root@server:~# uname -a
 Linux server 5.15.153-odroid-arm64 #1 SMP PREEMPT Thu, 01 Oct 2026 11:53:24 +0000 aarch64 aarch64 aarch64 GNU/Linux
