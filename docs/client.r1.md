@@ -1,4 +1,4 @@
-# Client : ODROID-M1 (2025-09-16)
+# Client : ODROID-R1 (2026-10-27)
 
 * Document : [ODROID-R1 JIG연결도(2026)](https://docs.google.com/spreadsheets/d/1uO0tWpi965akbPAEyKgAVrds5GoxAPgPy4x0gtpPmIw/edit?gid=0#gid=0)
 * Config   : [DEV Config](/configs/r1_dev.cfg), [UI Config](/configs/r1_ui.cfg)
