@@ -3,7 +3,7 @@
 ## List of configurable boards (Detailed settings)
 | MODEL | DATE | SERVER BOARD | SERVER-LCD |   | CLIENT BOARD | CLIENT-LCD | 
 |:-----:|:----:|:------------:|:----------:|:-:|:------------:|:----------:|
-| JIG_R1    | 2026.10 | ODROID-C5 | VU7  (1920x720) | | [ODROID-R1 (2025.09)](docs/client.r1.md) | HDMI (1920x1080) |
+| JIG_R1    | 2026.10 | ODROID-C5 | VU7  (1920x720) | | [ODROID-R1 (2026.10)](docs/client.r1.md) | HDMI (1920x1080) |
 | JIG_M1    | 2025.07 | ODROID-C5 | VU12 (1920x720) | | [ODROID-M1 (2025.09)](docs/client.m1.md) | VU5 (800x480) |
 | JIG_C4_C5 | 2025.01 | ODROID-C5 | VU12 (1920x720) | | [ODROID-C4 (2025.06)](docs/client.c4.md), [ODROID-C5 (2025.06)](docs/client.c5.md) | VU5 (800x480) |
 
